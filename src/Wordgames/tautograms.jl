@@ -42,7 +42,7 @@ Return a vector of matches in the form `(matching_range, matching_string)`.
 # Arguments
 - `text`: the input text to scan
 - `min_length_words=5`: consider only sequences with at least this number of words
-- `max_length_words=20`: consider only sequences with at least this number of words
+- `max_length_words=20`: consider only sequences with at most this number of words
 - `print_results=false`: whether to print results or just return them
 
 See also [`is_tautogram`](@ref).

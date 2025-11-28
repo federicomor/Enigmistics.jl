@@ -479,6 +479,7 @@ end
 
 """
 	can_place_word(cw::CrosswordPuzzle, word::String, row, col, direction::Symbol)
+	can_place_word(cw::CrosswordPuzzle, cwword::CrosswordWord)
 
 Check if a word can be placed in the crossword puzzle at the given position and direction (accepted values are `:horizontal` and `:vertical`). Returns true if the word can be placed, false otherwise.
 
@@ -558,11 +559,6 @@ function can_place_word(cw::CrosswordPuzzle, word::String, row::Int, col::Int, d
 	end
 	return true
 end
-"""
-	can_place_word(cw::CrosswordPuzzle, cwword::CrosswordWord)
-
-Check if a word can be placed in the crossword puzzle at the given position and direction (accepted values are `:horizontal` and `:vertical`). Returns true if the word can be placed, false otherwise.
-"""
 can_place_word(cw::CrosswordPuzzle, cword::CrosswordWord) = can_place_word(cw, cword.word, cword.row, cword.col, cword.direction)
 
 """

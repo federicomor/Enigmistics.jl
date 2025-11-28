@@ -1,19 +1,3 @@
-# anagrams.jl
-A posto così, perfetta, ottimizzata
-
-# heterograms.jl
-A posto così, perfetta, ottimizzata
-
-# lipograms.jl
-A posto così, perfetta, ottimizzata
-
-# palindroms.jl
-A posto così, perfetta, ottimizzata
-
-# pangrams.jl
-A posto così, perfetta, ottimizzata
-
-
 # Next steps
 Giochi semplici della sfinge
 
