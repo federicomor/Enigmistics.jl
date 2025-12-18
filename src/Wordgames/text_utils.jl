@@ -125,13 +125,13 @@ Extract a snippet of text from a given range, enlarged on both sides by the give
 
 # Examples
 ```julia-repl
-julia> text = "This is an example of a text which I could like to inspect more deeply";
+julia> text = "abcdefghijklmnopqrstuvwxyz";
 
-julia> snip(text,20:28,0)
-"of a text"
+julia> snip(text,13:14,0)
+"mn"
 
-julia> snip(text,20:28,20)
-"This is an example of a text which I could like "
+julia> snip(text,13:14,2)
+"klmnop"
 ```
 """
 function snip(text::String, rng::UnitRange{Int}, pad=10)
@@ -141,6 +141,6 @@ function snip(text::String, rng::UnitRange{Int}, pad=10)
     return text[real_start:real_end]
 end
 
-# text = "This is an example of a text which I could like to inspect more deeply";
-# snip(text,20:28,0)
-# snip(text,20:28,20)
+# text = "abcdefghijklmnopqrstuvwxyz";
+# snip(text,13:14,0)
+# snip(text,13:14,4)

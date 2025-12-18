@@ -10,11 +10,18 @@ CrosswordWord
 CrosswordBlackCell
 CrosswordPuzzle
 show_crossword
+example_crossword
 enlarge!
 shrink!
-can_place_word(cw::CrosswordPuzzle, word::String, row::Int, col::Int, direction::Symbol)
+can_place_word
 place_word!
 remove_word!
 place_black_cell!
 remove_black_cell!
+```
+
+## IO
+```@docs
+save_crossword
+load_crossword
 ```

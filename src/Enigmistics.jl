@@ -1,8 +1,7 @@
 module Enigmistics
 
 using ProgressMeter
-using DocStringExtensions
-
+using Random
 
 include("Wordgames/constants.jl")
 include("Wordgames/text_utils.jl")
@@ -23,11 +22,13 @@ export is_tautogram, scan_for_tautograms
 
 include("Crosswords/grid_utils.jl")
 include("Crosswords/crosswords.jl")
+include("Crosswords/io.jl")
 
 # export create_grid, show_grid, 
     # insert_row_above, insert_row_below, insert_col_right, insert_col_left, enlarge, shrink
 
-export CrosswordWord, CrosswordBlackCell, CrosswordPuzzle, show_crossword
+export CrosswordWord, CrosswordBlackCell, CrosswordPuzzle, show_crossword, example_crossword
 export enlarge!, shrink!, can_place_word, place_word!, remove_word!, place_black_cell!, remove_black_cell!
+export save_crossword, load_crossword
 
 end # module Enigmistics

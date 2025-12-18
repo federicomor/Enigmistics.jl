@@ -16,6 +16,13 @@ mutable struct CrosswordWord
 	direction::Symbol # :vertical or :horizontal 
 end 
 
+function Base.uppercase(cw::CrosswordWord)
+	return CrosswordWord(uppercase(cw.word), cw.row, cw.col, cw.direction)
+end
+function Base.uppercase(cw::Vector{CrosswordWord})
+	return uppercase.(cw)
+end
+
 """
 	CrosswordBlackCell
 
@@ -47,7 +54,7 @@ mutable struct CrosswordPuzzle
 	black_cells::Dict{Tuple{Int,Int}, CrosswordBlackCell}
 
 	function CrosswordPuzzle(grid::Matrix{Char},words::Vector{CrosswordWord},black_cells::Dict{Tuple{Int,Int}, CrosswordBlackCell})
-		cw = new(grid, words, black_cells); # uses default `new` constructor
+		cw = new(grid, uppercase(words), black_cells); # uses default `new` constructor
 		update_crossword!(cw); # post-construction initialization
 		return cw;
 	end
@@ -60,7 +67,7 @@ end
 Construct a crossword with an empty grid of the given dimensions.
 
 # Examples
-```julia-repl
+```jldoctest
 julia> cw = CrosswordPuzzle(4,5)
     1  2  3  4  5 
   ┌───────────────┐
@@ -85,24 +92,24 @@ Construct a crossword with the given dimensions and words. Return an error if wo
 
 # Examples
 ```julia-repl
-julia> words = [CrosswordWord("cat",2,2,:horizontal), CrosswordWord("bat",1,3,:vertical),
-                CrosswordWord("sir",4,4,:horizontal)];
+julia> words = [CrosswordWord("CAT",2,2,:horizontal), CrosswordWord("BAT",1,3,:vertical),
+                CrosswordWord("SIR",4,4,:horizontal)];
 
 julia> CrosswordPuzzle(5,6,words)
     1  2  3  4  5  6 
   ┌──────────────────┐
-1 │ ⋅  ⋅  b  ⋅  ⋅  ⋅ │
-2 │ ■  c  a  t  ■  ⋅ │
-3 │ ⋅  ⋅  t  ⋅  ⋅  ⋅ │
-4 │ ⋅  ⋅  ■  s  i  r │
+1 │ ⋅  ⋅  B  ⋅  ⋅  ⋅ │
+2 │ ■  C  A  T  ■  ⋅ │
+3 │ ⋅  ⋅  T  ⋅  ⋅  ⋅ │
+4 │ ⋅  ⋅  ■  S  I  R │
 5 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
   └──────────────────┘
 
-julia> words = [CrosswordWord("cat",2,2,:horizontal), CrosswordWord("bat",1,3,:vertical),
-                CrosswordWord("sir",4,4,:horizontal), CrosswordWord("dog",1,2,:vertical)];
+julia> words = [CrosswordWord("CAT",2,2,:horizontal), CrosswordWord("BAT",1,3,:vertical),
+                CrosswordWord("SIR",4,4,:horizontal), CrosswordWord("DOG",1,2,:vertical)];
 
 julia> CrosswordPuzzle(5,6,words)
-┌ Warning: Cannot place word 'dog' at (1, 2) vertically due to conflict at cell (2, 2). No changes on the original grid.
+┌ Warning: Cannot place word 'DOG' at (1, 2) vertically due to conflict at cell (2, 2). No changes on the original grid.
 ┌ Error: Words intersections are not compatible.
 ```
 """
@@ -143,58 +150,65 @@ end
 
 Base.:(==)(cw1::CrosswordPuzzle,cw2::CrosswordPuzzle) = cw1.grid == cw2.grid 
 
-function Base.show(io::IO, cw::CrosswordPuzzle)
-	show_crossword(io, cw, show_words=false, show_black_cells=false)
-end
-# the 3-argument show used by display(obj) on the REPL
+## do not declare this function so that the @show macro still works as we expect
+# function Base.show(io::IO, cw::CrosswordPuzzle)
+# 	show_crossword(io, cw, words_details=false, black_cells_details=false)
+# end
+## the 3-argument show used by display(obj) on the REPL
 function Base.show(io::IO, mime::MIME"text/plain", cw::CrosswordPuzzle)
-	show_crossword(io, cw, show_words=false, show_black_cells=false)
+	show_crossword(io, cw, words_details=false, black_cells_details=false)
 end
 
 """
-	show_crossword(cw::CrosswordPuzzle; show_words=true, show_black_cells=true)
+	show_crossword(cw::CrosswordPuzzle; words_details=true, black_cells_details=true)
 
 Print the crossword grid, possibly along with the list of words and the black cells details if the corresponding parameters are set to `true`.
 
 # Examples
-```julia-repl
-julia> cw = simple_crossword()
-    1  2  3  4  5  6 
-  ┌──────────────────┐
-1 │ ⋅  ⋅  b  ⋅  ⋅  ⋅ │
-2 │ ■  c  a  t  ■  ⋅ │
-3 │ ⋅  ⋅  t  ⋅  ⋅  ⋅ │
-4 │ ⋅  ⋅  ■  s  i  r │
-5 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
-  └──────────────────┘
+```jldoctest
+julia> cw = example_crossword(type="full");
 
 julia> show_crossword(cw)
-    1  2  3  4  5  6 
+    1  2  3  4  5  6
   ┌──────────────────┐
-1 │ ⋅  ⋅  b  ⋅  ⋅  ⋅ │
-2 │ ■  c  a  t  ■  ⋅ │
-3 │ ⋅  ⋅  t  ⋅  ⋅  ⋅ │
-4 │ ⋅  ⋅  ■  s  i  r │
-5 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  O  ■  A │
+3 │ T  ■  S  O  U  R │
+4 │ E  V  E  R  ■  R │
+5 │ ■  I  E  ■  ■  O │
+6 │ W  I  N  D  O  W │
   └──────────────────┘
-  
+
 Horizontal:
- - 'cat' at (2, 2)
- - 'sir' at (4, 4)
+ - 'GOLDEN' at (1, 1)
+ - 'AN' at (2, 1)
+ - 'SOUR' at (3, 3)
+ - 'EVER' at (4, 1)
+ - 'IE' at (5, 2)
+ - 'WINDOW' at (6, 1)
 Vertical:
- - 'bat' at (1, 3)
+ - 'GATE' at (1, 1)
+ - 'ON' at (1, 2)
+ - 'VII' at (4, 2)
+ - 'SEEN' at (3, 3)
+ - 'DOOR' at (1, 4)
+ - 'NARROW' at (1, 6)
 
 Black cells:
- - at (2, 5) was automatically derived (count=1.0)
- - at (2, 1) was automatically derived (count=1.0)
- - at (4, 3) was automatically derived (count=2.0)
+ - at (5, 5) was manually placed (count=Inf)
+ - at (3, 2) was automatically derived (count=3.0)
+ - at (4, 5) was automatically derived (count=1.0)
+ - at (2, 5) was manually placed (count=Inf)
+ - at (5, 1) was automatically derived (count=2.0)
+ - at (2, 3) was automatically derived (count=2.0)
+ - at (5, 4) was automatically derived (count=2.0)
 ```
 """
-function show_crossword(io::IO, cw::CrosswordPuzzle; show_words=true, show_black_cells=true)
+function show_crossword(io::IO, cw::CrosswordPuzzle; words_details=true, black_cells_details=true)
 	# grid
 	show_grid(io, cw.grid)
 	# words
-	if show_words
+	if words_details
 		if any([w.direction == :horizontal for w in cw.words]) 
 			println(io, "\n\nHorizontal:")
 			for w in filter(w -> w.direction == :horizontal, cw.words)
@@ -209,14 +223,14 @@ function show_crossword(io::IO, cw::CrosswordPuzzle; show_words=true, show_black
 		end
 	end
 	# black cells
-	if show_black_cells && !isempty(cw.black_cells)
+	if black_cells_details && !isempty(cw.black_cells)
 		println(io, "\nBlack cells:")
 		for (pos,cell) in cw.black_cells
 			println(io, " - at $pos was $(cell.manual==true ? "manually placed" : "automatically derived") (count=$(cell.count))")
 		end
 	end
 end
-show_crossword(cw::CrosswordPuzzle; show_words=true, show_black_cells=true) = show_crossword(stdout, cw; show_words=show_words, show_black_cells=show_black_cells)
+show_crossword(cw::CrosswordPuzzle; words_details=true, black_cells_details=true) = show_crossword(stdout, cw; words_details=words_details, black_cells_details=black_cells_details)
 
 """
 	update_crossword!(cw::CrosswordPuzzle)
@@ -230,13 +244,15 @@ function update_crossword!(cw::CrosswordPuzzle)
 
 	# preserve manually placed black cells
 	for (key, cell) in cw.black_cells
+		# @show key, cell
 		if cell.manual == true
 			new_black_cells[key] = cell
-			new_black_cells[key[1],key[2]] = BLACK_CELL
+			new_grid[key[1],key[2]] = BLACK_CELL
 		end
 	end
 
 	# inserting words
+	cw.words = uppercase(cw.words)
 	for w in cw.words
 		lw = length(w.word)
 		if w.direction == :horizontal
@@ -283,48 +299,77 @@ function update_crossword!(cw::CrosswordPuzzle)
 end
 
 """
-	simple_crossword()
+	example_crossword(; type="simple") 
 
-Return a simple crossword, useful during testing.
+Return an example crossword, useful e.g during testing. Available values for `type` are "simple" and "full".
 
 # Examples
-```julia-repl
-julia> cw = simple_crossword()
+```jldoctest
+julia> cw = example_crossword(type="simple")
     1  2  3  4  5  6 
   ┌──────────────────┐
-1 │ ⋅  ⋅  b  ⋅  ⋅  ⋅ │
-2 │ ■  c  a  t  ■  ⋅ │
-3 │ ⋅  ⋅  t  ⋅  ⋅  ⋅ │
-4 │ ⋅  ⋅  ■  s  i  r │
+1 │ ⋅  ⋅  B  ⋅  ⋅  ⋅ │
+2 │ ■  C  A  T  ■  ⋅ │
+3 │ ⋅  ⋅  T  ⋅  ⋅  ⋅ │
+4 │ ⋅  ⋅  ■  S  I  R │
 5 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+  └──────────────────┘
+
+julia> cw = example_crossword(type="full")
+    1  2  3  4  5  6 
+  ┌──────────────────┐
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  O  ■  A │
+3 │ T  ■  S  O  U  R │
+4 │ E  V  E  R  ■  R │
+5 │ ■  I  E  ■  ■  O │
+6 │ W  I  N  D  O  W │
   └──────────────────┘
 ```
 """
-function simple_crossword()
-	words = [
-		CrosswordWord("cat", 2, 2, :horizontal) 
-		,CrosswordWord("bat", 1, 3, :vertical)
-		,CrosswordWord("sir", 4, 4, :horizontal)
+function example_crossword(;type="simple")
+	if type=="simple"
+		words = [
+			CrosswordWord("CAT", 2, 2, :horizontal) 
+			,CrosswordWord("BAT", 1, 3, :vertical)
+			,CrosswordWord("SIR", 4, 4, :horizontal)
 		]
-	cw = CrosswordPuzzle(create_grid(5, 6,type="blank"), words, Dict{Tuple{Int,Int}, CrosswordBlackCell}())
-	# enlarge!(cw, :row_above)
+		cw = CrosswordPuzzle(create_grid(5, 6,type="blank"), words, Dict{Tuple{Int,Int}, CrosswordBlackCell}())
+	elseif type=="full"
+		words = [
+			CrosswordWord("GOLDEN", 1, 1, :horizontal) 
+			CrosswordWord("AN", 2, 1, :horizontal) 
+			CrosswordWord("SOUR", 3, 3, :horizontal) 
+			CrosswordWord("EVER", 4, 1, :horizontal) 
+			CrosswordWord("IE", 5, 2, :horizontal) 
+			CrosswordWord("WINDOW", 6, 1, :horizontal) 
+			CrosswordWord("GATE", 1, 1, :vertical) 
+			CrosswordWord("ON", 1, 2, :vertical) 
+			CrosswordWord("VII", 4, 2, :vertical) 
+			CrosswordWord("SEEN", 3, 3, :vertical) 
+			CrosswordWord("DOOR", 1, 4, :vertical) 
+			CrosswordWord("NARROW", 1, 6, :vertical) 
+		]
+		cw = CrosswordPuzzle(create_grid(6, 6,type="blank"), words, Dict{Tuple{Int,Int}, CrosswordBlackCell}())
+		place_black_cell!(cw,2,5)
+		place_black_cell!(cw,5,5)
+	end
 	return cw
 end
 
-
 function shift_contents!(cw::CrosswordPuzzle, (Δrow, Δcol))
-	if !(Δrow==0 || Δcol==0)
+	if Δrow!=0 && Δcol!=0
 		@error "Shift by one direction per time."
 		return false
 	end
 	for cword in cw.words
-			if !(cword.row + Δrow > 0 || cword.col + Δcol > 0)
-				@error "Cannot shift words outside buondaries."
-				return false
-			else
-				cword.row += Δrow
-				cword.col += Δcol
-			end
+		if cword.row + Δrow <= 0 || cword.col + Δcol <= 0
+			@error "Cannot shift words outside buondaries."
+			return false
+		else
+			cword.row += Δrow
+			cword.col += Δcol
+		end
 	end
 	bc_new = Dict{Tuple{Int64, Int64}, CrosswordBlackCell}()
 	for (key,cell) in cw.black_cells
@@ -347,57 +392,54 @@ end
 Enlarge the crossword grid in the direction given by `how` by inserting `times` empty rows/columns appropriately.
 
 # Examples
-```julia-repl
-julia> cw
+```jldoctest
+julia> cw = example_crossword()
     1  2  3  4  5  6 
   ┌──────────────────┐
-1 │ ⋅  ⋅  b  ⋅  ⋅  ⋅ │
-2 │ ■  c  a  t  ■  ⋅ │
-3 │ ⋅  ⋅  t  ⋅  ⋅  ⋅ │
-4 │ ⋅  ⋅  ■  s  i  r │
+1 │ ⋅  ⋅  B  ⋅  ⋅  ⋅ │
+2 │ ■  C  A  T  ■  ⋅ │
+3 │ ⋅  ⋅  T  ⋅  ⋅  ⋅ │
+4 │ ⋅  ⋅  ■  S  I  R │
 5 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
-6 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
   └──────────────────┘
 
-julia> enlarge!(cw, :col_left); cw
-    1  2  3  4  5  6  7 
+julia> enlarge!(cw, :O); cw
+    1  2  3  4  5  6  7
   ┌─────────────────────┐
-1 │ ⋅  ⋅  ⋅  b  ⋅  ⋅  ⋅ │
-2 │ ⋅  ■  c  a  t  ■  ⋅ │
-3 │ ⋅  ⋅  ⋅  t  ⋅  ⋅  ⋅ │
-4 │ ⋅  ⋅  ⋅  ■  s  i  r │
+1 │ ⋅  ⋅  ⋅  B  ⋅  ⋅  ⋅ │
+2 │ ⋅  ■  C  A  T  ■  ⋅ │
+3 │ ⋅  ⋅  ⋅  T  ⋅  ⋅  ⋅ │
+4 │ ⋅  ⋅  ⋅  ■  S  I  R │
 5 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
-6 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
   └─────────────────────┘
 
-julia> enlarge!(cw, :row_above, 2); cw
+julia> enlarge!(cw, :N, 2); cw
     1  2  3  4  5  6  7
   ┌─────────────────────┐
 1 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
 2 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
-3 │ ⋅  ⋅  ⋅  b  ⋅  ⋅  ⋅ │
-4 │ ⋅  ■  c  a  t  ■  ⋅ │
-5 │ ⋅  ⋅  ⋅  t  ⋅  ⋅  ⋅ │
-6 │ ⋅  ⋅  ⋅  ■  s  i  r │
+3 │ ⋅  ⋅  ⋅  B  ⋅  ⋅  ⋅ │
+4 │ ⋅  ■  C  A  T  ■  ⋅ │
+5 │ ⋅  ⋅  ⋅  T  ⋅  ⋅  ⋅ │
+6 │ ⋅  ⋅  ⋅  ■  S  I  R │
 7 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
-8 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
   └─────────────────────┘
 ```
 """
 function enlarge!(cw::CrosswordPuzzle, how::Symbol, times::Int=1)
-	if !(how in (:row_above, :row_below, :col_left, :col_right))
-		@warn "Direction not recognised (available direction are :row_above, :row_below, :col_left, :col_right). No changes on the original grid."
+	if !(how in (:N, :S, :E, :O))
+		@warn "Direction not recognised (available direction are :N, :S, :E, :O). No changes on the original grid."
 		return false
 	end
 	# enlarge the grid
 	new_grid = enlarge(cw.grid, how, times)
 	setfield!(cw, :grid, new_grid)
 	
-	# if directions are :col_right or :row_below => nothing more to do
+	# if directions are :E or :S => nothing more to do
 	# otherwise we need to shift words and black cells
-	if how == :row_above
+	if how == :N
 		shift_contents!(cw, (times,0))
-	elseif how == :col_left
+	elseif how == :O
 		shift_contents!(cw, (0,times))
 	end
 	# but alwyas we have to update the crossword, as new black cells could form
@@ -408,7 +450,7 @@ end
 """
 	shrink!(cw::CrosswordPuzzle)
 	
-Reduce the crossword size to its minimal representation by removing useless rows/columns.
+Reduce the crossword size to its minimal representation by removing useless rows/columns (i.e. the ones which only contain black or empty cells).
 
 # Examples
 ```julia-repl
@@ -417,20 +459,20 @@ julia> cw
   ┌────────────────────────┐
 1 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
 2 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
-3 │ ⋅  ⋅  ⋅  ⋅  b  ⋅  ⋅  ⋅ │
-4 │ ⋅  ⋅  ■  c  a  t  ■  ⋅ │
-5 │ ⋅  ⋅  ⋅  ⋅  t  ⋅  ⋅  ⋅ │
-6 │ ⋅  ⋅  ⋅  ⋅  ■  s  i  r │
+3 │ ⋅  ⋅  ⋅  ⋅  B  ⋅  ⋅  ⋅ │
+4 │ ⋅  ⋅  ■  C  A  T  ■  ⋅ │
+5 │ ⋅  ⋅  ⋅  ⋅  T  ⋅  ⋅  ⋅ │
+6 │ ⋅  ⋅  ⋅  ⋅  ■  S  I  R │
 7 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
   └────────────────────────┘
 
 julia> shrink!(cw); cw
     1  2  3  4  5
   ┌───────────────┐
-1 │ ⋅  b  ⋅  ⋅  ⋅ │
-2 │ c  a  t  ■  ⋅ │
-3 │ ⋅  t  ⋅  ⋅  ⋅ │
-4 │ ⋅  ■  s  i  r │
+1 │ ⋅  B  ⋅  ⋅  ⋅ │
+2 │ C  A  T  ■  ⋅ │
+3 │ ⋅  T  ⋅  ⋅  ⋅ │
+4 │ ⋅  ■  S  I  R │
   └───────────────┘
 ```
 """
@@ -485,25 +527,38 @@ Check if a word can be placed in the crossword puzzle at the given position and 
 
 # Examples
 ```julia-repl
-julia> cw = simple_crossword()
+julia> cw = example_crossword()
     1  2  3  4  5  6 
   ┌──────────────────┐
-1 │ ⋅  ⋅  b  ⋅  ⋅  ⋅ │
-2 │ ■  c  a  t  ■  ⋅ │
-3 │ ⋅  ⋅  t  ⋅  ⋅  ⋅ │
-4 │ ⋅  ⋅  ■  s  i  r │
+1 │ ⋅  ⋅  B  ⋅  ⋅  ⋅ │
+2 │ ■  C  A  T  ■  ⋅ │
+3 │ ⋅  ⋅  T  ⋅  ⋅  ⋅ │
+4 │ ⋅  ⋅  ■  S  I  R │
 5 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
   └──────────────────┘
 
-julia> can_place_word(cw, "star", 1, 4, :vertical)
-┌ Warning: Cannot place word 'star' at (1, 4) vertically due to conflict at cell (4, 4); found when checking the inner cells.
+julia> can_place_word(cw, "STAR", 1, 4, :vertical) # to-be-occupied cells: .T.S => wrong
+┌ Warning: Cannot place word 'STAR' at (1, 4) vertically due to conflict at cell (4, 4); found when checking the inner cells.
 false
 
-julia> can_place_word(cw, "star", 1, 6, :vertical) # correctly intersects with the "r" of "sir"
+julia> can_place_word(cw, "STAR", 1, 6, :vertical) # to-be-occupied cells: ...R => correct
 true
 ```
 """
 function can_place_word(cw::CrosswordPuzzle, word::String, row::Int, col::Int, direction::Symbol)
+	word = uppercase(word)
+	if length(word) < 2
+		@warn "Cannot insert words with less than 2 letters in a crossword."
+		return false
+	end
+	if word in [w.word for w in cw.words]
+		@warn "Word '$word' is already present in the crossword; you cannot have duplicate words in a crossword."
+		return false
+	end
+	if !all(isletter.(c for c in word))
+		@error "The provided word $word contains other characters than letters"
+		return false
+	end
 	lw = length(word)
 	nrows, ncols = size(cw.grid)
 	if direction == :horizontal
@@ -568,10 +623,7 @@ can_place_word(cw::CrosswordPuzzle, cword::CrosswordWord) = can_place_word(cw, c
 Place a word in the crossword puzzle at the given position and direction (accepted values are `:horizontal` and `:vertical`). Returns true if the word was successfully placed, false otherwise.
 """
 function place_word!(cw::CrosswordPuzzle, word::String, row::Int, col::Int, direction::Symbol)
-	if word in [w.word for w in cw.words]
-		@warn "Word '$word' is already present in the crossword. No changes on the original grid."
-		return false
-	end
+	word = uppercase(word)
 	if can_place_word(cw, word, row, col, direction)
 		push!(cw.words, CrosswordWord(word, row, col, direction))
 		update_crossword!(cw)
@@ -589,6 +641,7 @@ place_word!(cw::CrosswordPuzzle, cword::CrosswordWord) = place_word!(cw::Crosswo
 Remove a word from the crossword puzzle. Returns true if the word was found and removed, false otherwise.
 """
 function remove_word!(cw::CrosswordPuzzle, word::String)
+	word = uppercase(word)
 	if !(word in [w.word for w in cw.words])
 		@warn "Word '$word' not found in the crossword. No changes on the original grid."
 		return false
@@ -645,29 +698,31 @@ function remove_black_cell!(cw::CrosswordPuzzle, row::Int, col::Int)
 	end
 end
 
-# cw = simple_crossword()
-# enlarge!(cw,:col_left);cw
-# enlarge!(cw,:col_right);cw
-# enlarge!(cw,:row_below);cw
-# enlarge!(cw,:row_above);cw
+
+# cw= example_crossword(type="full")
+
+# enlarge!(cw,:O);cw
+# enlarge!(cw,:E);cw
+# enlarge!(cw,:S);cw
+# enlarge!(cw,:N);cw
 # shrink!(cw);cw
 
 # cw
-# remove_word!(cw,"dog")
-# remove_word!(cw,"cat")
+# remove_word!(cw,"window")
+# remove_word!(cw,"or")
 # cw
 
 
-# enlarge!(cw, :col_right, 2)
+# enlarge!(cw, :E, 2)
 # cw
-# place_word!(cw, "dog", 2, 2, :horizontal)
+# place_word!(cw, "window", 6, 1, :horizontal)
 # place_word!(cw, "dog", 2, 3, :horizontal)
 # place_word!(cw, "dog", 2, 4, :horizontal)
 # cw
 # can_place_word(cw, "dri", 2, 4, :vertical)
 # place_word!(cw, "dri", 2, 4, :vertical)
 # cw
-# enlarge!(cw, :row_below, 2)
+# enlarge!(cw, :S, 2)
 # cw
 # place_word!(cw, "seb", 1, 1, :horizontal)
 # cw
@@ -681,4 +736,3 @@ end
 # cw
 # place_black_cell!(cw,5,5); cw
 # remove_black_cell!(cw,5,5); cw
-

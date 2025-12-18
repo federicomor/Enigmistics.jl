@@ -9,9 +9,9 @@ See also [`scan_for_lipograms`](@ref).
 
 # Examples
 ```julia-repl
-julia> is_lipogram("If youth, throughout all history, had had a champion to stand up for it; to show a doubting
-       world that a child can think; and, possibly, do it practically; you wouldn’t constantly run
-       across folks today who claim that “a child don’t know anything.” A child’s brain starts
+julia> is_lipogram("If youth, throughout all history, had had a champion to stand up for it; to show 
+       a doubting world that a child can think; and, possibly, do it practically; you wouldn’t constantly
+       run across folks today who claim that “a child don’t know anything.” A child’s brain starts
        functioning at birth; and has, amongst its many infant convolutions, thousands of dormant
        atoms, into which God has put a mystic possibility for noticing an adult’s act, and figuring
        out its purport","e", verbose=true)
