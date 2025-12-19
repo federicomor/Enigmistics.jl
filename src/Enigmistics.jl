@@ -2,6 +2,7 @@ module Enigmistics
 
 using ProgressMeter
 using Random
+using Logging
 
 include("Wordgames/constants.jl")
 include("Wordgames/text_utils.jl")
@@ -28,7 +29,7 @@ include("Crosswords/io.jl")
     # insert_row_above, insert_row_below, insert_col_right, insert_col_left, enlarge, shrink
 
 export CrosswordWord, CrosswordBlackCell, CrosswordPuzzle, show_crossword, example_crossword
-export enlarge!, shrink!, can_place_word, place_word!, remove_word!, place_black_cell!, remove_black_cell!
+export enlarge!, shrink!, can_place_word, place_word!, remove_word!, place_black_cell!, remove_black_cell!, patterned_crossword
 export save_crossword, load_crossword
 
 end # module Enigmistics

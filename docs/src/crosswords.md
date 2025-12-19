@@ -18,6 +18,7 @@ place_word!
 remove_word!
 place_black_cell!
 remove_black_cell!
+patterned_crossword
 ```
 
 ## IO

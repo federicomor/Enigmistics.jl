@@ -673,6 +673,7 @@ function place_black_cell!(cw::CrosswordPuzzle, row::Int, col::Int)
 	end
 	cw.black_cells[idx] = CrosswordBlackCell(Inf64, true) # we manually placed it
 	update_crossword!(cw)
+	return true
 end
 
 
@@ -736,3 +737,158 @@ end
 # cw
 # place_black_cell!(cw,5,5); cw
 # remove_black_cell!(cw,5,5); cw
+
+
+function is_connected(cw::CrosswordPuzzle)
+    grid = cw.grid
+    nrows, ncols = size(grid)
+
+    # find any starting white cell
+    start = nothing
+    for i in 1:nrows, j in 1:ncols
+        if grid[i, j] != BLACK_CELL
+            start = (i, j)
+            break
+        end
+    end
+    # case of no white cells at all (degenerate but connected)
+    start === nothing && return true
+
+    visited = falses(nrows, ncols)
+    stack = [start]
+    visited[start...] = true
+	
+    # depth first search
+    while !isempty(stack)
+        i, j = pop!(stack)
+        for (di, dj) in ((1,0), (-1,0), (0,1), (0,-1))
+            ni, nj = i + di, j + dj
+            if 1 <= ni <= nrows && 1 <= nj <= ncols
+                if grid[ni, nj] != BLACK_CELL && !visited[ni, nj]
+                    visited[ni, nj] = true
+                    push!(stack, (ni, nj))
+                end
+            end
+        end
+    end
+
+    # check that every white cell was visited
+    for i in 1:nrows, j in 1:ncols
+        if grid[i, j] != BLACK_CELL && !visited[i, j]
+            return false
+        end
+    end
+    return true
+end
+
+"""
+	patterned_crossword(nrows, ncols; max_density=0.18, symmetry=true, double_symmetry=true, seed=rand(Int))
+
+Generate a crossword puzzle with black cells placed according to a random pattern, which can be totally random, symmetric, or doubly symmetric/specular. 
+
+# Arguments
+- `nrows`, `ncols`: dimensions of the crossword grid
+- `max_density`: maximum density of black cells (default: 0.18)
+- `symmetry`: whether to enforce symmetry (default: true)
+- `double_symmetry`: whether to enforce double symmetry/specularity (default: false)
+- `seed`: random seed for reproducibility (default: random)
+
+# Examples
+```jldoctest
+julia> patterned_crossword(8, 12, symmetry=false, seed=1234) # random pattern since symmetry=false
+    1  2  3  4  5  6  7  8  9 10 11 12 
+  ┌────────────────────────────────────┐
+1 │ ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+2 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ■ │
+3 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
+4 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+5 │ ■  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+6 │ ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
+7 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+8 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ■  ■  ⋅  ⋅ │
+  └────────────────────────────────────┘
+
+julia> patterned_crossword(8, 12, seed=5678)
+    1  2  3  4  5  6  7  8  9 10 11 12 
+  ┌────────────────────────────────────┐
+1 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■ │
+2 │ ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+3 │ ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+4 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅ │
+5 │ ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+6 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅ │
+7 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅ │
+8 │ ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+  └────────────────────────────────────┘
+
+julia> patterned_crossword(8, 12, double_symmetry=true, seed=9012)
+    1  2  3  4  5  6  7  8  9 10 11 12
+  ┌────────────────────────────────────┐
+1 │ ■  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ■ │
+2 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+3 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+4 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+5 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+6 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+7 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+8 │ ■  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ■ │
+  └────────────────────────────────────┘
+```
+"""
+function patterned_crossword(nrows::Int, ncols::Int; max_density::Float64 = 0.18, symmetry::Bool = true, 
+							double_symmetry::Bool = false, seed::Int=rand(Int))
+	@info "Using seed" seed
+	Random.seed!(seed)
+	cw = CrosswordPuzzle(nrows, ncols)
+
+	if !(0<=max_density<=1) @error "Max density should be between 0 and 1."; return cw end 
+	if (double_symmetry && !symmetry) @error "Cannot have double simmetry without single simmetry"; return cw end 
+
+	density = 0
+	black_cells = 0
+	iterations = 0
+
+	while density < max_density && iterations < 500
+		i = rand(1:nrows)
+		j = rand(1:ncols)
+
+		black_cells += place_black_cell!(cw,i,j)
+		if !is_connected(cw)
+			black_cells -= remove_black_cell!(cw,i,j)
+			continue
+		end
+
+		if symmetry
+			black_cells += place_black_cell!(cw,nrows-i+1,ncols-j+1)
+			if !is_connected(cw)
+				black_cells -= remove_black_cell!(cw,i,j)
+				black_cells -= remove_black_cell!(cw,nrows-i+1,ncols-j+1)
+				continue
+			end
+			if double_symmetry
+				black_cells += place_black_cell!(cw,i,ncols-j+1)
+				black_cells += place_black_cell!(cw,nrows-i+1,j)
+				if !is_connected(cw)
+					black_cells -= remove_black_cell!(cw,i,j)
+					black_cells -= remove_black_cell!(cw,i,ncols-j+1)
+					black_cells -= remove_black_cell!(cw,nrows-i+1,j)
+					black_cells -= remove_black_cell!(cw,nrows-i+1,ncols-j+1)
+					continue
+				end
+			end
+		end
+		density = black_cells / (nrows*ncols)
+		iterations += 1
+	end
+	# @show black_cells, density
+	if iterations >= 1000 @error "Max iterations reached (very strange?)." end
+	return cw
+end
+cw = patterned_crossword(20,20, max_density=0.2, symmetry=true, double_symmetry=false)
+cw = patterned_crossword(10, 14, max_density=0.2, symmetry=true, double_symmetry=true, seed = 5574269488134769058)
+# cw = patterned_crossword(10,6, max_density=0.2, symmetry=true, double_symmetry=true)
+# is_connected(cw)
+
+# patterned_crossword(8, 12, symmetry=false, seed=1234)
+# patterned_crossword(8, 12, seed=5678)
+# patterned_crossword(8, 12, double_symmetry=true, seed=9012)

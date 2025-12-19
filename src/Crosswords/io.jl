@@ -8,7 +8,7 @@ end
 Save the crossword puzzle `cw` to a text file specified by `filename`.
 
 The grid is saved using the following conventions:
-- `#` represents a black cell
+- `/` represents a black cell
 - `.` represents an empty cell
 - letters represent filled cells
 """
@@ -18,7 +18,7 @@ function save_crossword(cw::CrosswordPuzzle, filename::String)
         for r in 1:nrows
             for c in 1:ncols
                 cell = cw.grid[r,c]
-                if cell == BLACK_CELL print(io, "#")
+                if cell == BLACK_CELL print(io, "/")
                 elseif cell == EMPTY_CELL print(io, ".")
                 else print(io, cell)
                 end
@@ -58,7 +58,6 @@ function extract_horizontal_words(grid)
     end
     return words
 end
-cw = example_crossword(type="full")
 function extract_vertical_words(grid)
     nrows, ncols = size(grid)
     words = CrosswordWord[]
@@ -98,7 +97,7 @@ function read_grid(filename::String)
     # decode symbols into their official representations of the package
     for (r, line) in enumerate(lines)
         for (c, ch) in enumerate(line)
-            if ch == '#' grid[r,c] = BLACK_CELL
+            if ch == '/' grid[r,c] = BLACK_CELL
             elseif ch == '.' grid[r,c] = EMPTY_CELL
             else grid[r,c] = ch
             end
@@ -135,8 +134,9 @@ function load_crossword(path::String)
 end
 
 # pwd()
-# path="Crosswords/ex1.txt"
-# cw = load_crossword(path)
+# path="src/Crosswords/ex_eng.txt"
+path="src/Crosswords/ex_ita.txt"
+cw = load_crossword(path)
 
 
 # cw = simple_crossword()

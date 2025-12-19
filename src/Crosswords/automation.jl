@@ -95,8 +95,8 @@ function find_constrained_slots(cw::CrosswordPuzzle)
     )
 end
 
-# cd("src/Crosswords")
-cw = load_crossword("ex1.txt")
+cd("src/Crosswords")
+cw = load_crossword("ex_eng.txt")
 remove_word!(cw, "window")
 remove_word!(cw, "vii"); cw
 remove_word!(cw, "seen"); cw
@@ -116,7 +116,61 @@ function compute_options_simple(s::Slot)
     println("\t ", out[s.length][1:min(n_options,10)])
     return n_options, out
 end
-# function compute_options_split(s::Slot)
+function compute_options_split(s::Slot)
+    pattern = s.pattern
+    L = length(pattern)
+    n_options = 1; out = Dict{Int64, Vector{String}}()
+
+    # to avoid warning from the simulation
+    # Logging.LogLevel(Error)
+
+    for k in 1:L
+        # skip if this position already has a fixed letter
+        pattern[k] != '.' && continue
+        bcell_row, bcell_col = s.row+(k-1)*Int(s.direction==:vertical), s.col+(k-1)*Int(s.direction==:horizontal)
+    
+        # simulate the placement of a black cell at each internal position    
+        place_black_cell!(cw, bcell_row, bcell_col)
+        if !is_connected(cw)
+            println("- placing a black cell at ($bcell_row, $bcell_col) would make a disconnect crossword")
+            # directly revert the test placement
+            remove_black_cell!(cw, bcell_row, bcell_col)
+            continue
+        end
+        # otherwise we go on with the analysis
+        left_pattern = pattern[1:k-1]
+        len_left = length(left_pattern)
+        right_pattern = pattern[k+1:end]
+        len_right = length(right_pattern)
+
+        if k<=2
+            out = fitting_words(Regex(lowercase(right_pattern)),len_right,len_right)
+            n_options = length(out[len_right])
+            println("- placing a black cell at ($bcell_row, $bcell_col) => k: $k, pattern: $(left_pattern*'/'*right_pattern) => #options: $n_options")
+            println("\t ", out[len_right][1:min(n_options,10)])
+        elseif k>=s.length-1
+            # @show left_pattern, len_left
+            out = fitting_words(Regex(lowercase(left_pattern)),len_left,len_left)
+            n_options = length(out[len_left])
+            println("- placing a black cell at ($bcell_row, $bcell_col) => k: $k, pattern: $(left_pattern*'/'*right_pattern) => #options: $n_options")
+            println("\t ", out[len_left][1:min(n_options,10)])
+        else
+            out_right = fitting_words(Regex(lowercase(right_pattern)),len_right,len_right)
+            n_right = length(out_right[len_right])
+            out_left = fitting_words(Regex(lowercase(left_pattern)),len_left,len_left)
+            n_left = length(out_left[len_left])
+            n_options = n_left * n_right
+            println("- placing a black cell at ($bcell_row, $bcell_col) => k: $k, pattern: $(left_pattern*'/'*right_pattern) => #options: $n_options")
+            println("\t Left: ", out_left[len_left][1:min(n_left,5)])
+            println("\t Right: ", out_right[len_right][1:min(n_right,5)])
+        end
+
+        # revert the test placement
+        remove_black_cell!(cw, bcell_row, bcell_col)
+    end
+    # restore default level
+    # Logging.LogLevel(Info)
+end
 function compute_options_flexible(s::Slot, increment::Int)
     if s.flexible_start || s.flexible_end
         p = s.pattern
@@ -127,7 +181,7 @@ function compute_options_flexible(s::Slot, increment::Int)
         out = fitting_words(Regex(lowercase(p)),len,len)
         n_options = length(out[len])
         flexibility = s.flexible_start ? "start" * (s.flexible_end ? "/end" : "") : "end"
-        println("- (flexible $flexibility, increment=$increment) length: $(len) => #options: $n_options")
+        println("- flexible $flexibility, increment: $increment => length: $(len) => #options: $n_options")
         println("\t ", out[len][1:min(n_options,10)])
         return n_options, out
     else
@@ -154,19 +208,11 @@ function compute_options(s::Slot)
     end
 
     # with placements of black cells
-    # if s.length >= 
-    # println("==== WITH BLACK CELLS ====")
+    println("==== SIMULATING BLACK CELLS ============================")
+    compute_options_split(s)
 end
 
+Logging.disable_logging(Warn)
 compute_options(slots[2]) # 39 101 152
 compute_options(slots[3]) # 12 15 35
 compute_options(slots[4]) # 240 57 687 995
-
-for s in slots
-    results = fitting_words(Regex(lowercase(s.pattern)),s.length,s.length)
-    n_options = length(results[s.length])
-    println("for Slot $s we have ", n_options, " options")
-    if n_options <= 15
-        println("\t", results[s.length])
-    end
-end
