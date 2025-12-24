@@ -287,7 +287,8 @@ end
 # fill!(cw)
 
 function fill!(cw::CrosswordPuzzle; seed=rand(Int), iteration=0)
-    @info "Fill! iteration: $iteration"
+    # print("Iteration: $iteration\r")
+    print("Completeness [%]: $(round(100*sum(cw.grid .!= EMPTY_CELL) / prod(size(cw)),digits=2))\r")
     if iteration==0
         Random.seed!(seed)
         # rng = MersenneTwister(seed)
@@ -327,7 +328,8 @@ function fill!(cw::CrosswordPuzzle; seed=rand(Int), iteration=0)
     slot = slots[most_constrained_slot_idx]
 
     # Try all candidate words
-    for word in min_candidates[1:min(length(min_candidates), 10)]
+    for word in min_candidates[1:min(length(min_candidates), 30)]
+    # for word in min_candidates
         if place_word!(cw, word, slot.row, slot.col, slot.direction)
             if fill!(cw, iteration=iteration+1)
                 return true # SUCCESS propagates upward
@@ -341,16 +343,16 @@ function fill!(cw::CrosswordPuzzle; seed=rand(Int), iteration=0)
 end
 
 
-cw = patterned_crossword(4,4)
+cw = patterned_crossword(6,8)
 cw = patterned_crossword(8,10)
-cw = striped_crossword(10,12)
+cw = striped_crossword(10,14)
 
-# @time with_logger(NullLogger()) do
+@time with_logger(NullLogger()) do
     seed = rand(Int)
     # seed = -8809487323304925038
     println("seed: $seed")
     fill!(cw, seed=seed);cw
-# end
+end
 clear!(cw)
 
 
