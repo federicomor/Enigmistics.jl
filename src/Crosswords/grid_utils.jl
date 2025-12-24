@@ -2,6 +2,9 @@ using Random
 
 BLACK_CELL = '■'
 EMPTY_CELL = ' '
+is_black(c) = c == BLACK_CELL
+is_empty(c) = c == EMPTY_CELL
+EMPTY_CELL_SHOWED = '⋅'
 
 ALPHABET = collect('A':'Z')
 EXT_ALPHABET = copy(ALPHABET)
@@ -151,7 +154,7 @@ end
 show_grid(grid::Matrix{Char}; empty_placeholder = "⋅", style="single") = show_grid(stdout,grid; empty_placeholder=empty_placeholder,style=style)
 
 
-function insert_row_above(grid::Matrix{Char}, times::Int=1)
+function insert_direction_N(grid::Matrix{Char}, times::Int=1)
     old_nrows, old_ncols = size(grid)
     new_grid = create_grid(old_nrows+times, old_ncols, type="blank")
     for i in 1:old_nrows
@@ -161,7 +164,7 @@ function insert_row_above(grid::Matrix{Char}, times::Int=1)
     end
     return new_grid
 end
-function insert_row_below(grid::Matrix{Char}, times::Int=1)
+function insert_direction_S(grid::Matrix{Char}, times::Int=1)
     old_nrows, old_ncols = size(grid)
     new_grid = create_grid(old_nrows+times, old_ncols, type="blank")
     for i in 1:old_nrows
@@ -171,7 +174,7 @@ function insert_row_below(grid::Matrix{Char}, times::Int=1)
     end
     return new_grid
 end
-function insert_col_right(grid::Matrix{Char}, times::Int=1)
+function insert_direction_E(grid::Matrix{Char}, times::Int=1)
     old_nrows, old_ncols = size(grid)
     new_grid = create_grid(old_nrows, old_ncols+times, type="blank")
     for i in 1:old_nrows
@@ -181,7 +184,7 @@ function insert_col_right(grid::Matrix{Char}, times::Int=1)
     end
     return new_grid
 end
-function insert_col_left(grid::Matrix{Char}, times::Int=1)
+function insert_direction_O(grid::Matrix{Char}, times::Int=1)
     old_nrows, old_ncols = size(grid)
     new_grid = create_grid(old_nrows, old_ncols+times, type="blank")
     for i in 1:old_nrows
@@ -193,5 +196,5 @@ function insert_col_left(grid::Matrix{Char}, times::Int=1)
 end
 
 function enlarge(grid::Matrix{Char}, how::Symbol, times::Int=1)
-    how in (:row_above, :row_below, :col_left, :col_right) && return eval(Symbol("insert_", how))(grid, times)
+    how in (:N, :S, :E, :O) && return eval(Symbol("insert_direction_", how))(grid, times)
 end

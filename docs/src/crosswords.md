@@ -19,10 +19,17 @@ remove_word!
 place_black_cell!
 remove_black_cell!
 patterned_crossword
+striped_crossword
 ```
 
 ## IO
 ```@docs
 save_crossword
 load_crossword
+```
+
+## Automation
+```@docs
+Slot
+find_constrained_slots
 ```

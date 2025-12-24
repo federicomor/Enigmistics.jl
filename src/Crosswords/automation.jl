@@ -1,6 +1,17 @@
-is_black(c) = c == BLACK_CELL
-is_empty(c) = c == EMPTY_CELL
 
+"""
+    Slot
+
+Structure for a crossword slot, i.e. a place where a word can be placed.
+
+# Fields
+- `row`, `col`: slot position
+- `direction`: slot direction, :horizontal or :vertical
+- `length`: slot length
+- `pattern`: slot pattern, describing letters or blank spaces in the slot cells (e.g. "C.T" or "..A..")
+- `flexible_start`: can this slot be potentially expanded at the start (i.e. is it at the border of the grid)?
+- `flexible_end`: can this slot be potentially expanded at the end (i.e. is it at the border of the grid)?
+"""
 mutable struct Slot
     row::Int
     col::Int
@@ -87,7 +98,32 @@ function find_vertical_slots(grid::Matrix{Char})
 
     return slots
 end
+"""
+    find_constrained_slots(cw::CrosswordPuzzle)
 
+Find all slots (horizontal and vertical) in the crossword puzzle `cw` that are constrained, i.e. that have at least one empty cell and length at least 2.
+
+# Examples
+```julia-repl
+julia> cw
+    1  2  3  4  5  6 
+  ┌──────────────────┐
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  O  ■  ⋅ │
+3 │ T  ■  S  O  U  R │
+4 │ E  V  E  R  ■  ⋅ │
+5 │ ■  I  E  ■  ■  ⋅ │
+6 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+  └──────────────────┘
+
+julia> find_constrained_slots(cw)
+4-element Vector{Slot}:
+ Slot(6, 1, :horizontal, 6, "......", true, true)
+ Slot(4, 2, :vertical, 3, "VI.", false, true)
+ Slot(3, 3, :vertical, 4, "SEE.", false, true)
+ Slot(1, 6, :vertical, 6, "N.R...", true, true)
+```
+"""
 function find_constrained_slots(cw::CrosswordPuzzle)
     vcat(
         find_horizontal_slots(cw.grid),
@@ -95,25 +131,14 @@ function find_constrained_slots(cw::CrosswordPuzzle)
     )
 end
 
-cd("src/Crosswords")
-cw = load_crossword("ex_eng.txt")
-remove_word!(cw, "window")
-remove_word!(cw, "vii"); cw
-remove_word!(cw, "seen"); cw
-remove_word!(cw, "narrow"); cw
-
-find_vertical_slots(cw.grid)
-find_horizontal_slots(cw.grid)
-slots = find_constrained_slots(cw)
-
 
 function compute_options_simple(s::Slot)
     p = s.pattern
     p = '^'*p*'$' # fixing start and end positions, actually not necessary since length is constricted
     out = fitting_words(Regex(lowercase(p)),s.length,s.length)
     n_options = length(out[s.length])
-    println("- length: $(s.length) => #options: $n_options")
-    println("\t ", out[s.length][1:min(n_options,10)])
+    @info "- length: $(s.length) => #options: $n_options"
+    @info "\t $(out[s.length][1:min(n_options,10)])"
     return n_options, out
 end
 function compute_options_split(s::Slot)
@@ -192,7 +217,7 @@ end
 
 # function fit_flexible_proposal(s::Slot, increment::Int, choice::String)
     
-function compute_options(s::Slot)
+function compute_options(s::Slot; simple::Bool=true) #, flexible::Bool, flexible_up_to::Int, split::Bool)
     println("$s")
 
     # fixed size ones
@@ -212,7 +237,130 @@ function compute_options(s::Slot)
     compute_options_split(s)
 end
 
-Logging.disable_logging(Warn)
-compute_options(slots[2]) # 39 101 152
-compute_options(slots[3]) # 12 15 35
-compute_options(slots[4]) # 240 57 687 995
+# cd("Crosswords")
+# cw = load_crossword("ex_eng.txt")
+# remove_word!(cw, "window")
+# remove_word!(cw, "vii"); cw
+# remove_word!(cw, "seen"); cw
+# remove_word!(cw, "narrow"); cw
+
+# find_vertical_slots(cw.grid)
+# find_horizontal_slots(cw.grid)
+# slots = find_constrained_slots(cw)
+
+# # Logging.disable_logging(Warn)
+# compute_options(slots[2]) # 39 101 152
+# compute_options(slots[3]) # 12 15 35
+# compute_options(slots[4]) # 240 57 687 995
+
+# function fill!(cw::CrosswordPuzzle)
+#     # base case
+#     if is_full(cw)
+#         return true
+#     end
+
+#     slots = find_constrained_slots(cw)
+#     most_constrained_slot_idx = 0
+#     min_n_options = Inf; min_candidates = Dict{Int64, Vector{String}}()
+    
+#     for i in eachindex(slots)
+#         @info "Slot $i: $(slots[i])"
+#         n_options, candidates = compute_options_simple(slots[i])
+#         if n_options < min_n_options
+#             most_constrained_slot_idx = i
+#             min_n_options = n_options
+#             min_candidates = candidates
+#         end
+#     end
+#     if min_n_options == 0
+#         @warn "No candidates found for slot $(slots[most_constrained_slot_idx]), backtracking..."
+#         return false
+#     else
+#     # return most_constrained_slot_idx, min_n_options, min_candidates
+#     word_to_be_placed = rand(min_candidates[slots[most_constrained_slot_idx].length])
+#     # @info word_to_be_placed
+#     place_word!(cw, word_to_be_placed, slots[most_constrained_slot_idx].row, slots[most_constrained_slot_idx].col, slots[most_constrained_slot_idx].direction)
+
+#     fill!(cw)
+#     remove_word!(cw, word_to_be_placed)
+# end
+# fill!(cw)
+
+function fill!(cw::CrosswordPuzzle; seed=rand(Int), iteration=0)
+    @info "Fill! iteration: $iteration"
+    if iteration==0
+        Random.seed!(seed)
+        # rng = MersenneTwister(seed)
+        # @info "Starting fill! with seed $seed"
+    end
+    if iteration > 6000
+        @warn "Maximum iterations reached, aborting..."
+        return false
+    end
+    # Base case: crossword is complete
+    if is_full(cw)
+        println("Iterations needed: $iteration")
+        return true
+    end
+    
+    slots = find_constrained_slots(cw)
+    # Select most constrained slot (MRV)
+    most_constrained_slot_idx = 0
+    min_n_options = Inf
+    min_candidates = String[]
+
+    for (i, s) in enumerate(slots)
+        n_options, candidates = compute_options_simple(s)
+        if n_options == 0
+            # @info "Dead end at slot $s"
+            return false
+            # maybe add something here; user can know a "ner" word (not in the dictionary) to place
+        end
+        if n_options < min_n_options
+            most_constrained_slot_idx = i
+            min_n_options = n_options
+            min_candidates = shuffle(candidates[s.length])
+            # min_candidates = candidates[s.length]
+        end
+    end
+
+    slot = slots[most_constrained_slot_idx]
+
+    # Try all candidate words
+    for word in min_candidates[1:min(length(min_candidates), 10)]
+        if place_word!(cw, word, slot.row, slot.col, slot.direction)
+            if fill!(cw, iteration=iteration+1)
+                return true # SUCCESS propagates upward
+            end
+            remove_word!(cw, word) # backtrack
+        end
+    end
+
+    # All candidates failed
+    return false
+end
+
+
+cw = patterned_crossword(4,4)
+cw = patterned_crossword(8,10)
+cw = striped_crossword(10,12)
+
+# @time with_logger(NullLogger()) do
+    seed = rand(Int)
+    # seed = -8809487323304925038
+    println("seed: $seed")
+    fill!(cw, seed=seed);cw
+# end
+clear!(cw)
+
+
+
+
+# # Simple example of using carriage return to overwrite output
+# for i in 1:10
+#     print("Progress: $i/10\n") # Print progress and return to the start of the line
+#     print("altra riga di test $(i^2)\n")
+#     print("\033[2d")
+#     sleep(0.5) # Simulate time-consuming task
+# end
+# println("Done!") # Move to the next line after completion

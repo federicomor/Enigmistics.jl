@@ -1,7 +1,7 @@
 """
     is_tautogram(s::AbstractString)    
 
-Check if a given string is a tautogram, i.e., all words in the string start with the same letter.
+Check if a given string is a tautogram, i.e. if all words in the string start with the same letter.
 
 See also [`scan_for_tautograms`](@ref).
 
@@ -118,6 +118,5 @@ end
 
 # text = clean_read("../texts/paradise_lost.txt", newline_replace="/"); text[1:100]
 # out = scan_for_tautograms(text, min_length_words=5, max_length_words=20, print_results=true)
-# text = clean_read("../texts/divina_commedia.txt", newline_replace="/"); text[1:100]
+# text = clean_read("../../texts/divina_commedia.txt", newline_replace="/"); text[1:100]
 # out = scan_for_tautograms(text, min_length_words=4, max_length_words=20, print_results=true)
-

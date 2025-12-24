@@ -24,12 +24,15 @@ export is_tautogram, scan_for_tautograms
 include("Crosswords/grid_utils.jl")
 include("Crosswords/crosswords.jl")
 include("Crosswords/io.jl")
+include("Crosswords/automation.jl")
 
 # export create_grid, show_grid, 
     # insert_row_above, insert_row_below, insert_col_right, insert_col_left, enlarge, shrink
 
 export CrosswordWord, CrosswordBlackCell, CrosswordPuzzle, show_crossword, example_crossword
-export enlarge!, shrink!, can_place_word, place_word!, remove_word!, place_black_cell!, remove_black_cell!, patterned_crossword
-export save_crossword, load_crossword
+export enlarge!, shrink!, can_place_word, place_word!, remove_word!, place_black_cell!, remove_black_cell!
+export patterned_crossword, striped_crossword
+export save_crossword, load_crossword # Crosswords/io.jl
+export Slot, find_constrained_slots # Crosswords/automation.jl
 
 end # module Enigmistics

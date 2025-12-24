@@ -11,6 +11,31 @@ The grid is saved using the following conventions:
 - `/` represents a black cell
 - `.` represents an empty cell
 - letters represent filled cells
+
+# Examples
+```julia-repl
+julia> cw = example_crossword(type="full")
+    1  2  3  4  5  6 
+  ┌──────────────────┐
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  O  ■  A │
+3 │ T  ■  S  O  U  R │
+4 │ E  V  E  R  ■  R │
+5 │ ■  I  E  ■  ■  O │
+6 │ W  I  N  D  O  W │
+  └──────────────────┘
+
+julia> save_crossword(cw, "ex1.txt")
+```
+```
+file ex1.txt:
+GOLDEN
+AN/O/A
+T/SOUR
+EVER/R
+/IE//O
+WINDOW
+```
 """
 function save_crossword(cw::CrosswordPuzzle, filename::String)
     nrows, ncols = size(cw.grid)
@@ -31,7 +56,6 @@ end
 # remove_word!(cw, "narrow"); cw
 # remove_word!(cw, "window"); cw
 # save_crossword(cw, "ex2.txt")
-
 # cw2 = load_crossword("ex2.txt")
 
 function extract_horizontal_words(grid)
@@ -112,9 +136,48 @@ end
 Load a crossword puzzle from a text file specified by `path`.
 
 The grid should be written in the file using the following conventions:
-- `#` represents a black cell
+- `/` represents a black cell
 - `.` represents an empty cell
 - letters represent filled cells
+
+# Examples
+```
+file ex2.txt:
+GOLDEN
+AN/O/.
+T/SOUR
+EVER/.
+/IE/S.
+.IN.O.
+```
+```julia-repl
+julia> cw = load_crossword("ex2.txt"); show_crossword(cw)
+    1  2  3  4  5  6 
+  ┌──────────────────┐
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  O  ⋅  ⋅ │
+3 │ T  ■  ⋅  O  ⋅  ⋅ │
+4 │ E  V  E  R  ■  ⋅ │
+5 │ ■  ⋅  ⋅  ■  ⋅  ⋅ │
+6 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+  └──────────────────┘
+
+Horizontal:
+ - 'GOLDEN' at (1, 1)
+ - 'AN' at (2, 1)
+ - 'EVER' at (4, 1)
+Vertical:
+ - 'GATE' at (1, 1)
+ - 'ON' at (1, 2)
+ - 'DOOR' at (1, 4)
+
+Black cells:
+ - at (4, 5) was automatically derived (count=1.0)
+ - at (3, 2) was automatically derived (count=1.0)
+ - at (5, 1) was automatically derived (count=1.0)
+ - at (2, 3) was automatically derived (count=1.0)
+ - at (5, 4) was automatically derived (count=1.0)
+```
 """
 function load_crossword(path::String)
     grid = read_grid(path)
@@ -135,8 +198,8 @@ end
 
 # pwd()
 # path="src/Crosswords/ex_eng.txt"
-path="src/Crosswords/ex_ita.txt"
-cw = load_crossword(path)
+# path="ex_ita.txt"
+# cw = load_crossword(path)
 
 
 # cw = simple_crossword()

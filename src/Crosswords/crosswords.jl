@@ -206,7 +206,7 @@ Black cells:
 """
 function show_crossword(io::IO, cw::CrosswordPuzzle; words_details=true, black_cells_details=true)
 	# grid
-	show_grid(io, cw.grid)
+	show_grid(io, cw.grid, empty_placeholder = EMPTY_CELL_SHOWED, style="single")
 	# words
 	if words_details
 		if any([w.direction == :horizontal for w in cw.words]) 
@@ -782,7 +782,10 @@ function is_connected(cw::CrosswordPuzzle)
 end
 
 """
-	patterned_crossword(nrows, ncols; max_density=0.18, symmetry=true, double_symmetry=true, seed=rand(Int))
+```
+patterned_crossword(nrows, ncols; max_density=0.18, 
+		symmetry=true, double_symmetry=true, seed=rand(Int))
+```
 
 Generate a crossword puzzle with black cells placed according to a random pattern, which can be totally random, symmetric, or doubly symmetric/specular. 
 
@@ -795,47 +798,59 @@ Generate a crossword puzzle with black cells placed according to a random patter
 
 # Examples
 ```jldoctest
-julia> patterned_crossword(8, 12, symmetry=false, seed=1234) # random pattern since symmetry=false
-    1  2  3  4  5  6  7  8  9 10 11 12 
-  ┌────────────────────────────────────┐
-1 │ ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
-2 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ■ │
-3 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
-4 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
-5 │ ■  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
-6 │ ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
-7 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
-8 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ■  ■  ⋅  ⋅ │
-  └────────────────────────────────────┘
+julia> patterned_crossword(12, 20, symmetry=false, seed=123)
+     1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
+   ┌────────────────────────────────────────────────────────────┐
+ 1 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+ 2 │ ⋅  ■  ⋅  ■  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+ 3 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 4 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ■ │
+ 5 │ ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅ │
+ 6 │ ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅ │
+ 7 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+ 8 │ ⋅  ■  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 9 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ■  ■  ⋅ │
+10 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+11 │ ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅ │
+12 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+   └────────────────────────────────────────────────────────────┘
 
-julia> patterned_crossword(8, 12, seed=5678)
-    1  2  3  4  5  6  7  8  9 10 11 12 
-  ┌────────────────────────────────────┐
-1 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■ │
-2 │ ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
-3 │ ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
-4 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅ │
-5 │ ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
-6 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅ │
-7 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅ │
-8 │ ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
-  └────────────────────────────────────┘
+julia> patterned_crossword(12, 20, symmetry=true, seed=456)
+     1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
+   ┌────────────────────────────────────────────────────────────┐
+ 1 │ ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅ │
+ 2 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅ │
+ 3 │ ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 4 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
+ 5 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅ │
+ 6 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 7 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+ 8 │ ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+ 9 │ ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+10 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
+11 │ ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+12 │ ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■ │
+   └────────────────────────────────────────────────────────────┘
 
-julia> patterned_crossword(8, 12, double_symmetry=true, seed=9012)
-    1  2  3  4  5  6  7  8  9 10 11 12
-  ┌────────────────────────────────────┐
-1 │ ■  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ■ │
-2 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
-3 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
-4 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
-5 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
-6 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
-7 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
-8 │ ■  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ■ │
-  └────────────────────────────────────┘
+julia> patterned_crossword(12, 20, symmetry=true, double_symmetry=true, seed=789)
+     1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
+   ┌────────────────────────────────────────────────────────────┐
+ 1 │ ■  ⋅  ■  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ■  ⋅  ■ │
+ 2 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 3 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 4 │ ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅ │
+ 5 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 6 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
+ 7 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
+ 8 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 9 │ ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅ │
+10 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
+11 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+12 │ ■  ⋅  ■  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ■  ⋅  ■ │
+   └────────────────────────────────────────────────────────────┘
 ```
 """
-function patterned_crossword(nrows::Int, ncols::Int; max_density::Float64 = 0.18, symmetry::Bool = true, 
+function patterned_crossword(nrows::Int, ncols::Int; max_density::Real = 0.18, symmetry::Bool = true, 
 							double_symmetry::Bool = false, seed::Int=rand(Int))
 	@info "Using seed" seed
 	Random.seed!(seed)
@@ -847,8 +862,10 @@ function patterned_crossword(nrows::Int, ncols::Int; max_density::Float64 = 0.18
 	density = 0
 	black_cells = 0
 	iterations = 0
+	max_it = 500
 
-	while density < max_density && iterations < 500
+	while density < max_density && iterations < max_it
+		iterations += 1
 		i = rand(1:nrows)
 		j = rand(1:ncols)
 
@@ -878,17 +895,258 @@ function patterned_crossword(nrows::Int, ncols::Int; max_density::Float64 = 0.18
 			end
 		end
 		density = black_cells / (nrows*ncols)
-		iterations += 1
+		# display(cw)
 	end
 	# @show black_cells, density
-	if iterations >= 1000 @error "Max iterations reached (very strange?)." end
 	return cw
 end
-cw = patterned_crossword(20,20, max_density=0.2, symmetry=true, double_symmetry=false)
-cw = patterned_crossword(10, 14, max_density=0.2, symmetry=true, double_symmetry=true, seed = 5574269488134769058)
-# cw = patterned_crossword(10,6, max_density=0.2, symmetry=true, double_symmetry=true)
-# is_connected(cw)
 
-# patterned_crossword(8, 12, symmetry=false, seed=1234)
-# patterned_crossword(8, 12, seed=5678)
-# patterned_crossword(8, 12, double_symmetry=true, seed=9012)
+# using Logging
+# with_logger(NullLogger()) do
+# patterned_crossword(12, 20, symmetry=false, seed=123)
+# patterned_crossword(12, 20, symmetry=true, seed=456)
+# patterned_crossword(12, 20, symmetry=true, double_symmetry=true, seed=789)
+# end
+
+
+"""
+```
+striped_crossword(nrows, ncols; max_density = 0.18, 
+		min_stripe_dist = 4, keep_stripe_prob = 0.9,
+		symmetry = true, double_symmetry = false, seed=rand(Int))
+```
+
+Generate a crossword puzzle with black cells placed according to a striped pattern, which can be totally random, symmetric, or doubly symmetric/specular. 
+
+# Arguments
+- `nrows`, `ncols`: dimensions of the crossword grid
+- `max_density`: maximum density of black cells (default: 0.18)
+- `min_stripe_dist`: minimum distance allowed between stripes (default: 4)
+- `keep_stripe_prob`: probability of continuing a stripe (default: 0.8)
+- `symmetry`: whether to enforce symmetry (default: true)
+- `double_symmetry`: whether to enforce double symmetry/specularity (default: false)
+- `seed`: random seed for reproducibility (default: random)
+
+# Examples
+```jldoctest
+julia> striped_crossword(12, 20, symmetry=false, seed=123)
+     1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
+   ┌────────────────────────────────────────────────────────────┐
+ 1 │ ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 2 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 3 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
+ 4 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+ 5 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
+ 6 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 7 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+ 8 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+ 9 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
+10 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+11 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
+12 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
+   └────────────────────────────────────────────────────────────┘
+
+julia> striped_crossword(12, 20, symmetry=true, seed=456)
+     1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
+   ┌────────────────────────────────────────────────────────────┐
+ 1 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+ 2 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
+ 3 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+ 4 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+ 5 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
+ 6 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 7 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
+ 8 │ ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 9 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+10 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+11 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+12 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
+   └────────────────────────────────────────────────────────────┘
+
+julia> striped_crossword(12, 20, symmetry=true, double_symmetry=true, seed=789)
+     1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
+   ┌────────────────────────────────────────────────────────────┐
+ 1 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+ 2 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
+ 3 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+ 4 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+ 5 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 6 │ ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
+ 7 │ ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
+ 8 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 9 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+10 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+11 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
+12 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+   └────────────────────────────────────────────────────────────┘
+```
+"""
+function striped_crossword(nrows::Int, ncols::Int; max_density::Real = 0.18, 
+						   min_stripe_dist::Int = 4, keep_stripe_prob::Real = 0.8,
+						   symmetry::Bool = true, double_symmetry::Bool = false, seed::Int=rand(Int))
+	@info "Using seed" seed
+	Random.seed!(seed)
+	cw = CrosswordPuzzle(nrows, ncols)
+
+	if !(0<=max_density<=1) @error "Max density should be between 0 and 1."; return cw end 
+	if (double_symmetry && !symmetry) @error "Cannot have double simmetry without single simmetry"; return cw end 
+
+	density = 0
+	black_cells = 0
+	iterations = 0
+	max_it = 500
+
+	i = 0; j = 0
+	prev_i = 0; prev_j = 0
+	dir = rand((1,2)) # directions_types = ['/', '\\'] 
+	restart_search = false
+	di, dj = dir==1 ? (1, -1) : (1, 1)
+
+	while density < max_density && iterations < max_it
+		prev_i = i; prev_j = j
+		i = rand(1:nrows); j = rand(1:ncols)
+		iterations +=1
+
+		if iterations > 0 
+			if keep_stripe_prob >= rand() && restart_search==false
+				# we go on with the stripe
+				if (prev_i==1 && di==-1) || (prev_i==nrows && di==+1) di*= -1 end
+				if (prev_j==1 && dj==-1) || (prev_j==ncols && dj==+1) dj*= -1 end
+				i = mod1(prev_i + di,nrows)
+				j = mod1(prev_j + dj,ncols)
+			else
+				# reset stripe parameters
+				restart_search = false
+				dir = 3-dir
+				di, dj = dir==1 ? (1, -1) : (1, 1)
+				continue
+			end
+			
+			enough_space = all(cw.grid[max(1,i-min_stripe_dist):min(i+min_stripe_dist,nrows),j] .!= BLACK_CELL) &&
+						   all(cw.grid[i,max(1,j-min_stripe_dist):min(j+min_stripe_dist,ncols)] .!= BLACK_CELL)
+			if !enough_space
+				# reset stripe parameters
+				restart_search = false
+				dir = 3-dir
+				di, dj = dir==1 ? (1, -1) : (1, 1)
+				continue
+			end
+		end
+
+		black_cells += place_black_cell!(cw,i,j)
+		if !is_connected(cw)
+			black_cells -= remove_black_cell!(cw,i,j)
+			restart_search = true
+			continue
+		end
+
+		if symmetry
+			black_cells += place_black_cell!(cw,nrows-i+1,ncols-j+1)
+			if !is_connected(cw)
+				black_cells -= remove_black_cell!(cw,i,j)
+				black_cells -= remove_black_cell!(cw,nrows-i+1,ncols-j+1)
+				restart_search = true
+				continue
+			end
+			if double_symmetry
+				black_cells += place_black_cell!(cw,i,ncols-j+1)
+				black_cells += place_black_cell!(cw,nrows-i+1,j)
+				if !is_connected(cw)
+					black_cells -= remove_black_cell!(cw,i,j)
+					black_cells -= remove_black_cell!(cw,i,ncols-j+1)
+					black_cells -= remove_black_cell!(cw,nrows-i+1,j)
+					black_cells -= remove_black_cell!(cw,nrows-i+1,ncols-j+1)
+					restart_search = true
+					continue
+				end
+			end
+		end
+		density = black_cells / (nrows*ncols)
+		# display(cw)
+	end
+	return cw
+end
+
+# striped_crossword(12,20, symmetry=false, seed=123)
+# striped_crossword(12,20, symmetry=true, seed=456)
+# striped_crossword(12,20, symmetry=true, double_symmetry=true, seed=789)
+	
+# function patterned_crossword_gen(nrows::Int, ncols::Int; max_density::Real = 0.18, 
+# 							stripes_prob::Real=0.7, change_dir_prob::Real=0.3,
+# 							symmetry::Bool = true, double_symmetry::Bool = false, seed::Int=rand(Int))
+# 	@info "Using seed" seed
+# 	Random.seed!(seed)
+# 	cw = CrosswordPuzzle(nrows, ncols)
+
+# 	if !(0<=max_density<=1) @error "Max density should be between 0 and 1."; return cw end 
+# 	if (double_symmetry && !symmetry) @error "Cannot have double simmetry without single simmetry"; return cw end 
+
+# 	density = 0
+# 	black_cells = 0
+# 	iterations = 0
+# 	i = 0; j = 0
+# 	dirs = [(1,1),(1,-1),( -1,1),(-1,-1)]
+# 	di, dj =  0, 0
+# 	prev_i = 0; prev_j = 0
+
+# 	while density < max_density && iterations < 500
+# 		prev_i = i; prev_j = j
+# 		i = rand(1:nrows); j = rand(1:ncols)
+
+# 		if stripes_prob>0
+# 			if stripes_prob >= rand() && iterations > 0 
+# 				if change_dir_prob>=rand()
+# 					di, dj = rand(dirs)
+# 				end
+# 				i = mod1(prev_i + di,nrows)
+# 				j = mod1(prev_j + dj,ncols)
+# 			end
+# 		end
+
+# 		black_cells += place_black_cell!(cw,i,j)
+# 		if !is_connected(cw)
+# 			black_cells -= remove_black_cell!(cw,i,j)
+# 			continue
+# 		end
+
+# 		if symmetry
+# 			black_cells += place_black_cell!(cw,nrows-i+1,ncols-j+1)
+# 			if !is_connected(cw)
+# 				black_cells -= remove_black_cell!(cw,i,j)
+# 				black_cells -= remove_black_cell!(cw,nrows-i+1,ncols-j+1)
+# 				continue
+# 			end
+# 			if double_symmetry
+# 				black_cells += place_black_cell!(cw,i,ncols-j+1)
+# 				black_cells += place_black_cell!(cw,nrows-i+1,j)
+# 				if !is_connected(cw)
+# 					black_cells -= remove_black_cell!(cw,i,j)
+# 					black_cells -= remove_black_cell!(cw,i,ncols-j+1)
+# 					black_cells -= remove_black_cell!(cw,nrows-i+1,j)
+# 					black_cells -= remove_black_cell!(cw,nrows-i+1,ncols-j+1)
+# 					continue
+# 				end
+# 			end
+# 		end
+# 		density = black_cells / (nrows*ncols)
+# 		iterations += 1
+# 		# display(cw)
+# 	end
+# 	# @show black_cells, density
+# 	if iterations >= 1000 @error "Max iterations reached (very strange?)." end
+# 	return cw
+# end
+# patterned_crossword_gen(14,20, max_density=0.18, stripes_prob=0.6, change_dir_prob=0.6,
+# 	# seed = 12
+# )
+
+
+# cw = example_crossword(type="full")
+# cw.words
+function clear!(cw::CrosswordPuzzle)
+	empty!(cw.words)
+	update_crossword!(cw)
+	return cw
+end
+# cw
+# clear!(cw)
