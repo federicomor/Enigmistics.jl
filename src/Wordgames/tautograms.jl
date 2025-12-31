@@ -107,9 +107,13 @@ function scan_for_tautograms(text::String;
 
     if print_results
         println("Tautograms found:")
-        for (idx, (rng, phrase)) in enumerate(results)
-            # println(lpad(idx, 2), ") ", rng, ": ", phrase)
-            println(lpad(idx, 2), ") ($(length(resulting_words[idx])) words, $(count_letters(phrase)) chars) ", rng, ": ", text[rng])
+        if length(results) == 0
+            println("(none)")
+        else
+            for (idx, (rng, phrase)) in enumerate(results)
+                # println(lpad(idx, 2), ") ", rng, ": ", phrase)
+                println(lpad(idx, 2), ") ($(length(resulting_words[idx])) words, $(count_letters(phrase)) chars) ", rng, ": ", text[rng])
+            end
         end
     end
 

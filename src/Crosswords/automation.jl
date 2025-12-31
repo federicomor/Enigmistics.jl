@@ -286,21 +286,23 @@ end
 # end
 # fill!(cw)
 
-function fill!(cw::CrosswordPuzzle; seed=rand(Int), iteration=0)
+function fill!(cw::CrosswordPuzzle; seed=rand(Int), iteration=0, verbose=false)
     # print("Iteration: $iteration\r")
-    print("Completeness [%]: $(round(100*sum(cw.grid .!= EMPTY_CELL) / prod(size(cw)),digits=2))\r")
+    # if iteration%4 == 0 display(cw) end
+    if verbose print("Completeness [%]: $(round(100*sum(cw.grid .!= EMPTY_CELL) / prod(size(cw)),digits=2))\r") end
     if iteration==0
         Random.seed!(seed)
         # rng = MersenneTwister(seed)
         # @info "Starting fill! with seed $seed"
     end
-    if iteration > 6000
+    if iteration > 600
+        # println("Exiting for max iterations exceeded")
         @warn "Maximum iterations reached, aborting..."
         return false
     end
     # Base case: crossword is complete
     if is_full(cw)
-        println("Iterations needed: $iteration")
+        # println("Exiting for full crossword")
         return true
     end
     
@@ -313,7 +315,7 @@ function fill!(cw::CrosswordPuzzle; seed=rand(Int), iteration=0)
     for (i, s) in enumerate(slots)
         n_options, candidates = compute_options_simple(s)
         if n_options == 0
-            # @info "Dead end at slot $s"
+            # println("Dead end at slot $s")
             return false
             # maybe add something here; user can know a "ner" word (not in the dictionary) to place
         end
@@ -331,7 +333,8 @@ function fill!(cw::CrosswordPuzzle; seed=rand(Int), iteration=0)
     for word in min_candidates[1:min(length(min_candidates), 30)]
     # for word in min_candidates
         if place_word!(cw, word, slot.row, slot.col, slot.direction)
-            if fill!(cw, iteration=iteration+1)
+            @info "trying word '$word' at slot $slot"
+            if fill!(cw, iteration=iteration+1, verbose=verbose)
                 return true # SUCCESS propagates upward
             end
             remove_word!(cw, word) # backtrack
@@ -344,16 +347,57 @@ end
 
 
 cw = patterned_crossword(6,8)
-cw = patterned_crossword(8,10)
-cw = striped_crossword(10,14)
+cw = patterned_crossword(8,10, max_density = 0.2)
+cw = patterned_crossword(10,14, symmetry=true)
+cw = striped_crossword(10,14, min_stripe_dist = 4, keep_stripe_prob = 0.9)
 
+
+
+
+
+cw = patterned_crossword(8,10)
 @time with_logger(NullLogger()) do
     seed = rand(Int)
-    # seed = -8809487323304925038
+    # seed = 1666050086924584950
     println("seed: $seed")
-    fill!(cw, seed=seed);cw
+    fill!(cw, seed=seed, verbose=true)
+    cw
 end
 clear!(cw)
+
+
+
+
+cw = striped_crossword(10,14, min_stripe_dist = 4, keep_stripe_prob = 0.9)
+@time with_logger(NullLogger()) do
+    fill!(cw, verbose=true); cw
+end
+
+
+cw = patterned_crossword(10,12, symmetry=true)
+@time with_logger(NullLogger()) do
+    fill!(cw, verbose=true); cw
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -366,3 +410,45 @@ clear!(cw)
 #     sleep(0.5) # Simulate time-consuming task
 # end
 # println("Done!") # Move to the next line after completion
+
+
+
+
+
+
+
+cw = striped_crossword(10,14, min_stripe_dist = 4, keep_stripe_prob = 0.8)
+@time with_logger(NullLogger()) do
+    seed = rand(Int)
+    println("seed: $seed")
+    fill!(cw, seed=seed, verbose=true)
+    cw
+end
+
+
+
+LogLevel(Info)
+
+
+
+cw = patterned_crossword(9,12, symmetry=true)
+@time with_logger(NullLogger()) do
+    seed = rand(Int)
+    println("seed: $seed")
+    fill!(cw, seed=seed, verbose=true)
+    cw
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
