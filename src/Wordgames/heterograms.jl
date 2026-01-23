@@ -6,7 +6,7 @@ Check if a string is a heterogram, i.e. if it does not contain any repeated lett
 See also [`scan_for_heterograms`](@ref).
 
 # Examples
-```julia-repl
+```jldoctest
 julia> is_heterogram("unpredictable") # letter 'e' is repeated
 false
 
@@ -18,18 +18,32 @@ true
 ```
 """
 function is_heterogram(s::AbstractString)
-    letters = [lowercase(c) for c in s if isletter(c)]
-    return length(letters) == length(Set(letters))
+    s = strip_text(s)
+    ## old simple version:
+    # letters = [lowercase(c) for c in s if isletter(c)]
+    # return length(letters) == length(Set(letters))
+    ## slightly more efficient:
+    seen = Set{Char}()
+    for c in s
+        isletter(c) || continue
+        cl = lowercase(c)
+        cl in seen && return false
+        push!(seen, cl)
+    end
+    return true
 end
 
-# is_heterogram("unpredictable") # letter 'e' is repeated
-# is_heterogram("unpredictably")
-# is_heterogram("The big dwarf only jumps")
-
+# @assert is_heterogram("èeé") == false
+# @time is_heterogram("unpredictable") # letter 'e' is repeated
+# @time is_heterogram("unpredictably")
+# @time is_heterogram("The big dwarf only jumps")
 
 
 """
-    scan_for_heterograms(text::String; min_length_letters=10)
+```
+scan_for_heterograms(text::String; 
+    min_length_letters=10, print_results=false)
+```
 
 Scan a text and look for sequences of words which are heterograms.
 
@@ -43,7 +57,7 @@ Return a vector of matches in the form `(matching_range, matching_string)`.
 See also [`is_heterogram`](@ref).
 
 # Examples
-```julia-repl
+```jldoctest
 julia> text = clean_read("../texts/ulyss.txt", newline_replace="/");
 
 julia> scan_for_heterograms(text, min_length_letters=15)
@@ -69,7 +83,7 @@ function scan_for_heterograms(text::String;
                             min_length_letters::Int=15,
                             print_results::Bool=false)
 
-    # Precompute words and positions
+    # precompute words and positions
     matches = collect(eachmatch(r"\w+", text))
     words = [m.match for m in matches]
     starts = [m.offset for m in matches]
@@ -82,7 +96,7 @@ function scan_for_heterograms(text::String;
 
     for i in 1:n
         for j in i:n
-            # Extract substring from original text
+            # extract substring from original text
             phrase = text[starts[i]:ends[j]]
             len = count_letters(phrase)
 
@@ -100,8 +114,10 @@ function scan_for_heterograms(text::String;
 
     if print_results
         println("Heterograms found:")
+        if length(results) == 0
+            println("(none)"); return results
+        end
         for (idx, (rng, phrase)) in enumerate(results)
-            # println(lpad(idx, 2), ") ", rng, ": ", phrase)
             println(lpad(idx, 2), ") ($(count_letters(phrase)) letters) ", rng, ": ", phrase)
         end
     end
@@ -109,11 +125,10 @@ function scan_for_heterograms(text::String;
     return results
 end
 
+# text = clean_read("texts/ulyss.txt", newline_replace="/");
+# @time scan_for_heterograms(text, min_length_letters=15, print_results=true)
 
-# text = clean_read("../texts/ulyss.txt", newline_replace="/");
-# scan_for_heterograms(text, min_length_letters=15, print_results=false)
-
-# text = clean_read("../texts/brothers_karamazov.txt", newline_replace="/");
+# text = clean_read("texts/brothers_karamazov.txt", newline_replace="/");
 # out = scan_for_heterograms(text, min_length_letters=14, print_results=true)
 
 

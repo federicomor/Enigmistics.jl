@@ -346,57 +346,38 @@ function fill!(cw::CrosswordPuzzle; seed=rand(Int), iteration=0, verbose=false)
 end
 
 
-cw = patterned_crossword(6,8)
-cw = patterned_crossword(8,10, max_density = 0.2)
-cw = patterned_crossword(10,14, symmetry=true)
-cw = striped_crossword(10,14, min_stripe_dist = 4, keep_stripe_prob = 0.9)
+# cw = patterned_crossword(6,8)
+# cw = patterned_crossword(8,10, max_density = 0.2)
+# cw = patterned_crossword(10,14, symmetry=true)
+# cw = striped_crossword(10,14, min_stripe_dist = 4, keep_stripe_prob = 0.9)
 
 
 
 
 
-cw = patterned_crossword(8,10)
-@time with_logger(NullLogger()) do
-    seed = rand(Int)
-    # seed = 1666050086924584950
-    println("seed: $seed")
-    fill!(cw, seed=seed, verbose=true)
-    cw
-end
-clear!(cw)
+# cw = patterned_crossword(8,10)
+# @time with_logger(NullLogger()) do
+#     seed = rand(Int)
+#     # seed = 1666050086924584950
+#     println("seed: $seed")
+#     fill!(cw, seed=seed, verbose=true)
+#     cw
+# end
+# clear!(cw)
 
 
 
 
-cw = striped_crossword(10,14, min_stripe_dist = 4, keep_stripe_prob = 0.9)
-@time with_logger(NullLogger()) do
-    fill!(cw, verbose=true); cw
-end
+# cw = striped_crossword(10,14, min_stripe_dist = 4, keep_stripe_prob = 0.9)
+# @time with_logger(NullLogger()) do
+#     fill!(cw, verbose=true); cw
+# end
 
 
-cw = patterned_crossword(10,12, symmetry=true)
-@time with_logger(NullLogger()) do
-    fill!(cw, verbose=true); cw
-end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# cw = patterned_crossword(10,12, symmetry=true)
+# @time with_logger(NullLogger()) do
+#     fill!(cw, verbose=true); cw
+# end
 
 
 
@@ -417,38 +398,25 @@ end
 
 
 
-cw = striped_crossword(10,14, min_stripe_dist = 4, keep_stripe_prob = 0.8)
-@time with_logger(NullLogger()) do
-    seed = rand(Int)
-    println("seed: $seed")
-    fill!(cw, seed=seed, verbose=true)
-    cw
-end
+# cw = striped_crossword(10,14, min_stripe_dist = 4, keep_stripe_prob = 0.8)
+# @time with_logger(NullLogger()) do
+#     seed = rand(Int)
+#     println("seed: $seed")
+#     fill!(cw, seed=seed, verbose=true)
+#     cw
+# end
 
 
 
-LogLevel(Info)
+# LogLevel(Info)
 
 
 
-cw = patterned_crossword(9,12, symmetry=true)
-@time with_logger(NullLogger()) do
-    seed = rand(Int)
-    println("seed: $seed")
-    fill!(cw, seed=seed, verbose=true)
-    cw
-end
-
-
-
-
-
-
-
-
-
-
-
-
-
+# cw = patterned_crossword(9,12, symmetry=true)
+# @time with_logger(NullLogger()) do
+#     seed = rand(Int)
+#     println("seed: $seed")
+#     fill!(cw, seed=seed, verbose=true)
+#     cw
+# end
 

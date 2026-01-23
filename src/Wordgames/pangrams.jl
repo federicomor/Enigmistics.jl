@@ -23,9 +23,11 @@ julia> is_pangram("Pranzo d'acqua fa volti sghembi", language="it")
 true
 ```
 """
-function is_pangram(s::AbstractString; language="en", verbose=false)
+function is_pangram(s::AbstractString; language="en", verbose=false, normalize=true)
+    if normalize s = normalize_accents(lowercase(s)) end
+    # @info s
     alphabet = language_corrections[language]
-    s_set = Set(lowercase.(collect(s)))
+    s_set = Set(collect(s))
     out = setdiff(alphabet,s_set)
     if isempty(out)
         return true
@@ -38,7 +40,7 @@ end
 function highlight_letter(s::AbstractString, letters::String)
     for c in s
         # @show c
-        if occursin(lowercase(c),letters)
+        if occursin(strip_text(c),strip_text(letters))
             printstyled(c, underline=false, bold=true, color=:magenta)
             # print("_$c _")
         else
@@ -46,18 +48,26 @@ function highlight_letter(s::AbstractString, letters::String)
         end
     end
 end
-# highlight_letter("The quick brown fox jumps over the lazy dog","bw")
+highlight_letter(s::AbstractString, letter::Char) = highlight_letter(s::AbstractString, string(letter))
 
+
+# highlight_letter("The quick brown fox jumps over the lazy dog","bw")
+# highlight_letter("Davvero è così","è")
 
 # is_pangram("The quick orange fox jumps over the lazy dog", verbose=true)
 # is_pangram("The quick brown fox jumps over the lazy dog", verbose=true)
 # is_pangram("Pranzo d'acqua fa volti sghembi") # false due to the default alphabet being english
 # is_pangram("Pranzo d'acqua fa volti sghembi", language="it")
+# is_pangram("Pranzò d'acqùa fa vòlti sghembi", language="it")
+# is_pangram("Pranzò d'acqùa fa vòlti sghembi", language="it", normalize=false)
 
 
 
 """
-    scan_for_pangrams(text::String; max_length=60, language="en", verbose=false) 
+```
+scan_for_pangrams(text::String; 
+    max_length_letters=60, language="en", verbose=false, print_results=false)
+```
 
 Scan a text and look for sequences of words which are pangrams.
 
@@ -95,13 +105,17 @@ function scan_for_pangrams(text::AbstractString; max_length_letters::Int=80,
                             print_results::Bool=false)
 
     # precompute words and positions
-    matches = collect(eachmatch(r"\w+", text))
+    cleaned_text = normalize_accents(lowercase(text))
+    # matches = collect(eachmatch(r"\w+", text))
+    matches = collect(eachmatch(r"\p{L}+", text))
     words = [m.match for m in matches]
     starts = [m.offset for m in matches]
     ends = [m.offset + lastindex(m.match) - 1 for m in matches]
     n = length(words)
 
     results = []
+    clean_candidate = ""
+    candidate = ""
     pool_words = [] # each element: (word, start_char, end_char)
     p = Progress(n, desc="Scanning for pangrams...")
 
@@ -117,9 +131,9 @@ function scan_for_pangrams(text::AbstractString; max_length_letters::Int=80,
         if !isempty(pool_words)
             start_char = pool_words[1][2]
             end_char = pool_words[end][3]
-            candidate = SubString(text, start_char:end_char)  # cheap view
-
-            if is_pangram(candidate, language=language, verbose=verbose)
+            clean_candidate = SubString(cleaned_text, start_char:end_char)
+            if is_pangram(clean_candidate, language=language, verbose=verbose, normalize=false)
+                candidate = SubString(text, start_char:end_char)
                 push!(results, (start_char:end_char, candidate))
             end
         end
@@ -139,7 +153,8 @@ function scan_for_pangrams(text::AbstractString; max_length_letters::Int=80,
 end
 
 
-# text = clean_read("../texts/paradise_lost.txt", newline_replace="/"); text[1:100]
-# scan_for_pangrams(text, max_length_letters=80, language="en",print_results=true)
+text = clean_read("texts/paradise_lost.txt", newline_replace="/"); text[1:100]
+# text = snip(text,21698:21804,20)
+@time scan_for_pangrams(text, max_length_letters=80, language="en",print_results=true)
 # text = clean_read("../texts/divina_commedia.txt", newline_replace="/"); text[1:100]
-# scan_for_pangrams(text, max_length_letters=50, language="it")
+# @time scan_for_pangrams(text, max_length_letters=50, language="it")

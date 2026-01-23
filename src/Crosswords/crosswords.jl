@@ -783,8 +783,9 @@ end
 
 """
 ```
-patterned_crossword(nrows, ncols; max_density=0.18, 
-		symmetry=true, double_symmetry=true, seed=rand(Int))
+patterned_crossword(nrows, ncols; 
+		max_density=0.18, symmetry=true, double_symmetry=true, 
+		seed=rand(Int))
 ```
 
 Generate a crossword puzzle with black cells placed according to a random pattern, which can be totally random, symmetric, or doubly symmetric/specular. 
@@ -911,9 +912,11 @@ end
 
 """
 ```
-striped_crossword(nrows, ncols; max_density = 0.18, 
+striped_crossword(nrows, ncols; 
+		max_density = 0.18, 
 		min_stripe_dist = 4, keep_stripe_prob = 0.9,
-		symmetry = true, double_symmetry = false, seed=rand(Int))
+		symmetry = true, double_symmetry = false, 
+		seed=rand(Int))
 ```
 
 Generate a crossword puzzle with black cells placed according to a striped pattern, which can be totally random, symmetric, or doubly symmetric/specular. 
@@ -1143,10 +1146,28 @@ end
 
 # cw = example_crossword(type="full")
 # cw.words
-function clear!(cw::CrosswordPuzzle)
+"""
+	clear!(cw::CrosswordPuzzle)
+
+Clear all words from the crossword puzzle `cw`.
+
+# Examples
+```julia-repl
+
+```
+"""
+function clear!(cw::CrosswordPuzzle; keep_manual_black_cells=true)
 	empty!(cw.words)
+	if !keep_manual_black_cells empty!(cw.black_cells) end
 	update_crossword!(cw)
 	return cw
 end
-# cw
+# cw = example_crossword(type="full")
 # clear!(cw)
+# cw = example_crossword(type="full");
+# clear!(cw, keep_manual_black_cells=false)
+
+
+# cw.black_cells
+# empty!(cw.black_cells)
+# cw

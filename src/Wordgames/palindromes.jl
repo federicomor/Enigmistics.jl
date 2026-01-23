@@ -27,7 +27,10 @@ end
 # is_palindrome("Never odd or even.")
 
 """
-    scan_for_palindromes(text::String; min_length_letters=6,  max_length_letters=30)
+```
+scan_for_palindromes(text::String; 
+    min_length_letters=6, max_length_letters=30, print_results=false)
+```
 
 Scan a text and look for pairs of word sequences which are anagrams.
     

@@ -8,35 +8,52 @@ The parameter `wrt` is a string so that single or multiple letters can be easily
 See also [`scan_for_lipograms`](@ref).
 
 # Examples
-```julia-repl
+```jldoctest
 julia> is_lipogram("If youth, throughout all history, had had a champion to stand up for it; to show 
        a doubting world that a child can think; and, possibly, do it practically; you wouldn’t constantly
        run across folks today who claim that “a child don’t know anything.” A child’s brain starts
        functioning at birth; and has, amongst its many infant convolutions, thousands of dormant
        atoms, into which God has put a mystic possibility for noticing an adult’s act, and figuring
-       out its purport","e", verbose=true)
+       out its purport", "e", verbose=true)
 true
 ```
 """
 function is_lipogram(s::AbstractString, wrt::AbstractString; verbose=false)
-    letters = Set([lowercase(c) for c in s if isletter(c)])
-    wrt_set = Set([lowercase(c) for c in wrt if isletter(c)])
-    out = intersect(wrt_set, letters)
-    if isempty(out)
-        return true
-    else
-        if verbose @info "Letter(s) present from wrt: $out" end
-        return false
+    ## old simple version:
+    # letters = Set([lowercase(c) for c in s if isletter(c)])
+    # wrt_set = Set([lowercase(c) for c in wrt if isletter(c)])
+    # out = intersect(wrt_set, letters)
+    # if isempty(out)
+    #     return true
+    # else
+    #     if verbose @info "Letter(s) present from wrt: $out" end
+    #     return false
+    # end
+    ## slightly more efficient:
+    wrt_set = Set(lowercase(c) for c in wrt if isletter(c))
+    for c in s
+        isletter(c) || continue
+        cl = lowercase(c)
+        if cl in wrt_set
+            if verbose
+                @info "Letter(s) present from wrt: $(Set([cl]))"
+            end
+            return false
+        end
     end
+    return true
 end
 
-# is_lipogram("This is a small writing without using a famous symbol following B","e", verbose=true)
-# is_pangram("The quick brown fox jumps over the lazy cat"; verbose=true)
-# is_lipogram("The quick brown fox jumps over the lazy cat","dgef",verbose=true) # 'd' and 'g' are missing
 
+# @time is_lipogram("This is a small writing without using a famous symbol following B","e", verbose=true)
+# @time is_pangram("The quick brown fox jumps over the lazy cat"; verbose=true)
+# @time is_lipogram("The quick brown fox jumps over the lazy cat","dgef",verbose=true) # 'd' and 'g' are missing
 
 """
-    scan_for_lipograms(text::String, wrt::String; min_length_letters=30, max_length_letters=100)
+```
+scan_for_lipograms(text::String, wrt::String; 
+    min_length_letters=30, max_length_letters=100, print_results=false)
+```
 
 Scan a text and look for sequences of words that are lipograms with respect to the letters given by `wrt`.
 
@@ -51,7 +68,7 @@ Return a vector of matches in the form `(matching_range, matching_string)`.
 See also [`is_lipogram`](@ref).
 
 # Examples
-```julia-repl
+```jldoctest
 julia> text = clean_read("../texts/all_shakespeare.txt", newline_replace="/");
 
 julia> scan_for_lipograms(text, "eta", min_length_letters=34) # E, T and A are the most common letters in english
@@ -109,8 +126,8 @@ function scan_for_lipograms(text::String, wrt::String;
     return results
 end
 
-# text = clean_read("../texts/paradise_lost.txt", newline_replace="/"); text[1:100]
-# scan_for_lipograms(text, "ea", min_length_letters=42,print_results=true)
+# text = clean_read("texts/paradise_lost.txt", newline_replace="/"); text[1:100]
+# @time scan_for_lipograms(text, "ea", min_length_letters=42,print_results=true)
 
 # text = clean_read("../texts/all_shakespeare.txt", newline_replace="/"); text[1:100]
 # scan_for_lipograms(text, "eta", min_length_letters=34,print_results=true) # "ETA" are the most common letters in english

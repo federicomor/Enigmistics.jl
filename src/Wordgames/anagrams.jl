@@ -28,12 +28,19 @@ function are_anagrams(s1::AbstractString,s2::AbstractString; be_strict=true, ski
         s2_clean = lowercase.(filter(isletter,collect(s2)))
         length(s1_clean) != length(s2_clean) && return false
     end
-
-    for c in Set(s1_clean)
-        if count(x->x==c,s1_clean) != count(x->x==c,s2_clean)
-            return false
-        end
+    # for c in Set(s1_clean)
+    #     if count(x->x==c,s1_clean) != count(x->x==c,s2_clean)
+    #         return false
+    #     end
+    # end
+    freq = Dict{Char, Int}()
+    for c in s1_clean
+        freq[c] = get(freq, c, 0) + 1
     end
+    for c in s2_clean
+        freq[c] = get(freq, c, 0) - 1
+    end
+    any(v != 0 for v in values(freq)) && return false
     if be_strict
         # derive the words, sort them and compare the result
         s1_cleaner = strip_text(s1)
@@ -51,11 +58,16 @@ end
 # are_anagrams("The Morse Code","Here come dots!") # true anagram
 # are_anagrams("The Morse Code","Morse: the code!") # just a fancy reordering
 # are_anagrams("The Morse Code","Morse: the code!", be_strict=false)
+are_anagrams("a","a", be_strict=false)
 
 
 
 """
-    function scan_for_anagrams(text::String; min_length_letters=6, max_length_letters=30, max_distance_words=40, be_strict=true, print_results=false)
+```
+scan_for_anagrams(text::String; 
+    min_length_letters=6, max_length_letters=30, max_distance_words=40, 
+    be_strict=true, print_results=false)
+```
 
 Scan a text and look for pairs of word sequences which are anagrams.
     
@@ -72,25 +84,25 @@ Return a vector of matches in the form `(range1, words1, range2, words2)`.
 See also [`are_anagrams`](@ref).
 
 # Examples
-```julia-repl
+```jldoctest-
 julia> text = "Last night I saw a gentleman; he was a really elegant man.";
 
-julia> matches = scan_for_anagrams(text, min_length_letters=1, max_length_letters=14, max_distance_words=10)
+julia> matches = scan_for_anagrams(text, min_length_letters=1, max_length_letters=14, max_distance_words=10, be_strict=false)
 4-element Vector{Any}:
- (14:16, "saw", 34:36, "was")
- (14:18, "saw a", 34:38, "was a")
- (18:18, "a", 38:38, "a")
- (18:28, "a gentleman", 47:57, "elegant man")
+ (14:16, ["saw"], 34:36, ["was"])
+ (14:18, ["saw", "a"], 34:38, ["was", "a"])
+ (18:18, ["a"], 38:38, ["a"])
+ (18:28, ["a", "gentleman"], 47:57, ["elegant", "man"])
 
 julia> matches = scan_for_anagrams(text, min_length_letters=1, max_length_letters=14, max_distance_words=10, be_strict=true)
 3-element Vector{Any}:
- (14:16, "saw", 34:36, "was")
- (14:18, "saw a", 34:38, "was a")
- (18:28, "a gentleman", 47:57, "elegant man")
+ (14:16, ["saw"], 34:36, ["was"])
+ (14:18, ["saw", "a"], 34:38, ["was", "a"])
+ (18:28, ["a", "gentleman"], 47:57, ["elegant", "man"])
 
 julia> matches = scan_for_anagrams(text, min_length_letters=5, max_length_letters=14, max_distance_words=10)
 1-element Vector{Any}:
- (18:28, "a gentleman", 47:57, "elegant man")
+ (18:28, ["a", "gentleman"], 47:57, ["elegant", "man"])
 ```
 """
 function scan_for_anagrams(text::String;
@@ -99,7 +111,7 @@ function scan_for_anagrams(text::String;
                             max_distance_words::Int=20,
                             print_results=false, be_strict=true)
 
-    # Precompute words and positions
+    # precompute words and positions
     matches = collect(eachmatch(r"\w+", text))
     words = [m.match for m in matches]
     words = lowercase.(filter.(x->isletter(x),words))
@@ -147,6 +159,9 @@ function scan_for_anagrams(text::String;
 
     if print_results
         println("Anagrams found:")
+        if length(results) == 0
+            println("(none)"); return results
+        end
         for (idx, (rng1, phrase1, rng2, phrase2)) in enumerate(results)
             println(lpad(idx,2), ") ($(count_letters(phrase1)) letters) ", rng1, ": ", join(phrase1," "), ", ", rng2, ": ", join(phrase2, " "))
         end    

@@ -46,7 +46,7 @@ It's the function on which [`clean_read`](@ref) relies on.
 """
 function clean_text(s::AbstractString; newline_replace=" ")
     s_clean = s |> 
-        x -> normalize_accents(x) |>
+        # x -> normalize_accents(x) |>
         x -> replace(x, "\n|\t" => " ") |> # convert new lines to spaces
         x -> replace(x, r" {2,}" => " $newline_replace ") |> # so that when there are more spaces it means that there was a newline
         x -> replace(x, r" {2,}" => " ") # and finally adjust multiple spaces to a single one
@@ -67,9 +67,9 @@ julia> strip_text("This? is a -very simple, indeed- test!!")
 function strip_text(s::AbstractString)
     return lowercase(s) |> 
             w->normalize_accents(w) |>
-            w->replace(w, r"[^a-z]" => " ") |> 
-            w->replace(w,r" {2,}" => " ") |> 
-            w->replace(w, r"^\s+|\s+$" => "")
+            w->replace(w, r"[^a-z]" => " ") |> # keep only letters a-z, replace others with space
+            w->replace(w,r" {2,}" => " ") |> # reduce multiple spaces to single one
+            w->replace(w, r"^\s+|\s+$" => "") # strip leading/trailing spaces
 end
 # strip_text("This? is a -very simple- test!! nòw morè còmplèx")
 

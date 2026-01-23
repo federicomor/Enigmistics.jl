@@ -15,9 +15,11 @@ false
 ```
 """
 function is_tautogram(s::AbstractString)
+    s = strip_text(s) # needed to filter only the sequence of words
+    # @info s
     matches = collect(eachmatch(r"\w+", s))
     words = [m.match for m in matches]
-    words = lowercase.(words)
+    # words = lowercase.(words)
     first_letter = words[1][1]
     for w in words
         # @show w[1]
@@ -33,7 +35,10 @@ end
 
 
 """
-    scan_for_tautograms(text::String; min_length_words=5, max_length_words=20, print_results=false)
+```
+scan_for_tautograms(text::String; 
+    min_length_words=5, max_length_words=20, print_results=false)
+```
 
 Scan a text and look for sequences of words which are tautograms.
 
@@ -67,14 +72,14 @@ function scan_for_tautograms(text::String;
                             print_results::Bool=false)
 
     # Precompute words and positions
-    matches = collect(eachmatch(r"\w+", text))
+    # matches = collect(eachmatch(r"\w+", text))
+    matches = collect(eachmatch(r"\p{L}+", text))
     words = [m.match for m in matches]
-    # words = lowercase.(filter.(x->isletter(x),words))
-    # words = lowercase.(words)
-    # @show words
-    initials = [lowercase(w[1]) for w in words]
     starts = [m.offset for m in matches]
     ends = [m.offset + lastindex(m.match) - 1 for m in matches]
+
+    # cleaning work done here since later we are not calling the is_tautogram function anymore
+    initials = [lowercase(normalize_accents(w[1])) for w in words]
 
     n = length(words)
     @assert n == length(initials)
@@ -120,7 +125,7 @@ function scan_for_tautograms(text::String;
     return results
 end
 
-# text = clean_read("../texts/paradise_lost.txt", newline_replace="/"); text[1:100]
-# out = scan_for_tautograms(text, min_length_words=5, max_length_words=20, print_results=true)
-# text = clean_read("../../texts/divina_commedia.txt", newline_replace="/"); text[1:100]
+# text = clean_read("texts/paradise_lost.txt", newline_replace="/"); text[1:100]
+# @time scan_for_tautograms(text, min_length_words=5, max_length_words=20, print_results=true)
+# text = clean_read("texts/divina_commedia.txt", newline_replace="/"); text[1:100]
 # out = scan_for_tautograms(text, min_length_words=4, max_length_words=20, print_results=true)

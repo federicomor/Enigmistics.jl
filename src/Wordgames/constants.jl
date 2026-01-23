@@ -1,16 +1,20 @@
-CONSONANTS = collect("bcdfghjklmnpqrstvwxyz")
-VOWELS = collect("aeiouàèìòù")
+const CONSONANTS = collect("bcdfghjklmnpqrstvwxyz")
+const VOWELS = collect("aeiouàèìòù")
 
-EN_ALPHABET = collect('a':'z')
-IT_ALPHABET = setdiff(EN_ALPHABET,collect("jkxyw"))
-# IT_ALPHABET = ['a','b','c','d','e','f','g','h','i','l','m','n','o','p','q','r','s','t','u','v','z']
+const EN_ALPHABET = collect('a':'z')
+const IT_ALPHABET = setdiff(EN_ALPHABET,collect("jkxyw"))
 
-language_corrections = Dict{String,Vector{Char}}(
+const language_corrections = Dict{String,Vector{Char}}(
     "en" => EN_ALPHABET,
     "it" => IT_ALPHABET
 )
 
-ACCENT_RULES = Dict(
+const alphabet_index = Dict(
+    lang => Dict(c => i for (i, c) in enumerate(chars))
+    for (lang, chars) in language_corrections
+)
+
+const ACCENT_RULES = Dict(
     'à' => 'a','á' => 'a','â' => 'a','ä' => 'a',
     'é' => 'e','è' => 'e','ê' => 'e','ë' => 'e',
     'ì' => 'i','í' => 'i','î' => 'i','ï' => 'i',
@@ -18,3 +22,4 @@ ACCENT_RULES = Dict(
     'ù' => 'u','ú' => 'u','û' => 'u','ü' => 'u'
 )
 normalize_accents(w::AbstractString) = replace(w::AbstractString, ACCENT_RULES...)
+normalize_accents(c::AbstractChar) = get(ACCENT_RULES, c, c)

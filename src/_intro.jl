@@ -11,6 +11,7 @@ include("Wordgames/heterograms.jl")
 include("Wordgames/palindromes.jl")
 include("Wordgames/lipograms.jl")
 include("Wordgames/tautograms.jl")
+include("Wordgames/abecedaries.jl")
 
 
 include("Crosswords/grid_utils.jl")

@@ -4,14 +4,16 @@ using ProgressMeter
 using Random
 using Logging
 
-include("Wordgames/constants.jl")
-include("Wordgames/text_utils.jl")
-include("Wordgames/pangrams.jl")
-include("Wordgames/anagrams.jl")
-include("Wordgames/heterograms.jl")
-include("Wordgames/lipograms.jl")
-include("Wordgames/palindromes.jl")
-include("Wordgames/tautograms.jl")
+@info "==== Wordgames section loading ===="
+@info "Including Wordgames/constants.jl";   include("Wordgames/constants.jl")
+@info "Including Wordgames/text_utils.jl";  include("Wordgames/text_utils.jl")
+@info "Including Wordgames/pangrams.jl";    include("Wordgames/pangrams.jl")
+@info "Including Wordgames/anagrams.jl";    include("Wordgames/anagrams.jl")
+@info "Including Wordgames/heterograms.jl"; include("Wordgames/heterograms.jl")
+@info "Including Wordgames/lipograms.jl";   include("Wordgames/lipograms.jl")
+@info "Including Wordgames/palindromes.jl"; include("Wordgames/palindromes.jl")
+@info "Including Wordgames/tautograms.jl";  include("Wordgames/tautograms.jl")
+@info "Including Wordgames/abecedaries.jl"; include("Wordgames/abecedaries.jl")
 
 export clean_read, clean_text, count_letters, snip
 export is_pangram, scan_for_pangrams
@@ -20,11 +22,14 @@ export is_heterogram, scan_for_heterograms
 export is_lipogram, scan_for_lipograms
 export is_palindrome, scan_for_palindromes
 export is_tautogram, scan_for_tautograms
+export is_abecedary, scan_for_abecedaries
 
-include("Crosswords/grid_utils.jl")
-include("Crosswords/crosswords.jl")
-include("Crosswords/io.jl")
-include("Crosswords/automation.jl")
+@info "==== Crosswords section loading ===="
+@info "Including Crosswords/grid_utils.jl"; include("Crosswords/grid_utils.jl")
+@info "Including Crosswords/crosswords.jl"; include("Crosswords/crosswords.jl")
+@info "Including Crosswords/io.jl";         include("Crosswords/io.jl")
+@info "Including Crosswords/dictionary.jl"; include("Crosswords/dictionary.jl")
+@info "Including Crosswords/automation.jl"; include("Crosswords/automation.jl")
 
 # export create_grid, show_grid, 
     # insert_row_above, insert_row_below, insert_col_right, insert_col_left, enlarge, shrink

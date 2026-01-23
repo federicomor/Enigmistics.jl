@@ -48,3 +48,8 @@ is_tautogram
 scan_for_tautograms
 ```
 
+## Abecedaries
+```@docs
+is_abecedary
+scan_for_abecedaries
+```
