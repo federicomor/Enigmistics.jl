@@ -1,5 +1,5 @@
-const CONSONANTS = collect("bcdfghjklmnpqrstvwxyz")
-const VOWELS = collect("aeiouàèìòù")
+# const CONSONANTS = collect("bcdfghjklmnpqrstvwxyz")
+# const VOWELS = collect("aeiou")
 
 const EN_ALPHABET = collect('a':'z')
 const IT_ALPHABET = setdiff(EN_ALPHABET,collect("jkxyw"))

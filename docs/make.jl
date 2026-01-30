@@ -1,3 +1,4 @@
+# julia --color=yes --project make.jl
 push!(LOAD_PATH,"../src/")
 using Documenter, Enigmistics
 

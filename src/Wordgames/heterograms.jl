@@ -19,16 +19,11 @@ true
 """
 function is_heterogram(s::AbstractString)
     s = strip_text(s)
-    ## old simple version:
-    # letters = [lowercase(c) for c in s if isletter(c)]
-    # return length(letters) == length(Set(letters))
-    ## slightly more efficient:
     seen = Set{Char}()
     for c in s
-        isletter(c) || continue
-        cl = lowercase(c)
-        cl in seen && return false
-        push!(seen, cl)
+        isletter(c) || continue # skip non-letters (eg. spaces, punctuation)
+        c in seen && return false
+        push!(seen, c)
     end
     return true
 end
@@ -37,7 +32,6 @@ end
 # @time is_heterogram("unpredictable") # letter 'e' is repeated
 # @time is_heterogram("unpredictably")
 # @time is_heterogram("The big dwarf only jumps")
-
 
 """
 ```
@@ -84,14 +78,13 @@ function scan_for_heterograms(text::String;
                             print_results::Bool=false)
 
     # precompute words and positions
-    matches = collect(eachmatch(r"\w+", text))
+    matches = collect(eachmatch(r"\p{L}+", text)) # separe words by runs of letters only
     words = [m.match for m in matches]
     starts = [m.offset for m in matches]
     ends = [m.offset + lastindex(m.match) - 1 for m in matches]
 
     n = length(words)
     results = []
-
     p = Progress(n, desc="Scanning for heterograms...")
 
     for i in 1:n
@@ -127,8 +120,3 @@ end
 
 # text = clean_read("texts/ulyss.txt", newline_replace="/");
 # @time scan_for_heterograms(text, min_length_letters=15, print_results=true)
-
-# text = clean_read("texts/brothers_karamazov.txt", newline_replace="/");
-# out = scan_for_heterograms(text, min_length_letters=14, print_results=true)
-
-

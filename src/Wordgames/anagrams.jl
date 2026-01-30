@@ -1,9 +1,10 @@
 """
-    are_anagrams(s1::AbstractString, s2::AbstractString; be_strict=true, skip_checks=false)
+    are_anagrams(s1::AbstractString, s2::AbstractString; be_strict=true)
+    are_anagrams(s1::Vector{String}, s2::Vector{String}; be_strict=true)
 
 Check if two strings are anagrams, i.e. if the letters of one can be rearranged to form the other.
 
-The parameter `be_strict` is defaulted to `true` to avoid considering as anagrams strings where one is simply a permutation of the other, while `skip_checks` can be set to `true` to avoid the preliminary operations about lengths checks and characters normalization.
+The parameter `be_strict` is defaulted to `true` to avoid considering as anagrams strings where one is simply a permutation of the other.
 
 See also [`scan_for_anagrams`](@ref).
 
@@ -19,20 +20,12 @@ julia> are_anagrams("The Morse Code","Morse: the code!", be_strict=false) # just
 true
 ```
 """
-function are_anagrams(s1::AbstractString,s2::AbstractString; be_strict=true, skip_checks=false)
-    if skip_checks
-        s1_clean = s1
-        s2_clean = s2
-    else 
-        s1_clean = lowercase.(filter(isletter,collect(s1)))
-        s2_clean = lowercase.(filter(isletter,collect(s2)))
-        length(s1_clean) != length(s2_clean) && return false
-    end
-    # for c in Set(s1_clean)
-    #     if count(x->x==c,s1_clean) != count(x->x==c,s2_clean)
-    #         return false
-    #     end
-    # end
+function are_anagrams(s1::AbstractString,s2::AbstractString; be_strict=true)
+    # collect cleaned letters form each string
+    s1_clean = normalize_accents.(lowercase.(filter(isletter,collect(s1))))
+    s2_clean = normalize_accents.(lowercase.(filter(isletter,collect(s2))))
+    length(s1_clean) != length(s2_clean) && return false
+
     freq = Dict{Char, Int}()
     for c in s1_clean
         freq[c] = get(freq, c, 0) + 1
@@ -42,25 +35,20 @@ function are_anagrams(s1::AbstractString,s2::AbstractString; be_strict=true, ski
     end
     any(v != 0 for v in values(freq)) && return false
     if be_strict
-        # derive the words, sort them and compare the result
+        # we need to check that the two strings are not just a reordering of the same words
         s1_cleaner = strip_text(s1)
         s2_cleaner = strip_text(s2)
-        # @show s1_cleaner
-        # @show s2_cleaner
+        # so we derive the words, sort them, and compare the result
         return sort(split(s1_cleaner," ")) != sort(split(s2_cleaner," "))
     end
     return true
 end
-function are_anagrams(s1::Vector,s2::Vector; be_strict=false, skip_checks=false)
-    return are_anagrams(join(s1, " "),join(s2, " "),be_strict=be_strict,skip_checks=skip_checks)
+function are_anagrams(s1::Vector{String},s2::Vector{String}; be_strict=false)
+    return are_anagrams(join(s1, " "),join(s2, " "), be_strict=be_strict)
 end
 
-# are_anagrams("The Morse Code","Here come dots!") # true anagram
-# are_anagrams("The Morse Code","Morse: the code!") # just a fancy reordering
-# are_anagrams("The Morse Code","Morse: the code!", be_strict=false)
-are_anagrams("a","a", be_strict=false)
-
-
+# @time are_anagrams(["The","Morse Code"],["Here","come","dots!"])
+# @time are_anagrams("The Morse Code","Here come dots!")
 
 """
 ```
@@ -112,15 +100,13 @@ function scan_for_anagrams(text::String;
                             print_results=false, be_strict=true)
 
     # precompute words and positions
-    matches = collect(eachmatch(r"\w+", text))
+    matches = collect(eachmatch(r"\p{L}+", text)) # separe words by runs of letters only
     words = [m.match for m in matches]
-    words = lowercase.(filter.(x->isletter(x),words))
     starts = [m.offset for m in matches]
     ends = [m.offset + lastindex(m.match) - 1 for m in matches]
-
+    
     n = length(words)
     results = []
-
     p = Progress(n, desc="Scanning for anagrams...")
 
     for i in 1:n
@@ -139,16 +125,11 @@ function scan_for_anagrams(text::String;
                         if len2 > max_length_letters
                             break
                         end
-                        if len2 >= min_length_letters && len1==len2
-                            if are_anagrams(pool1, pool2; be_strict=be_strict, skip_checks=true)
-                                # character spans from original text
-                                rng1 = starts[i]:ends[j]
-                                rng2 = starts[k]:ends[l]
-                                # phrase1 = text[rng1]
-                                # phrase2 = text[rng2]
-                                # push!(results, (rng1, phrase1, rng2, phrase2))
-                                push!(results, (rng1, pool1, rng2, pool2))
-                            end
+                        if len2 >= min_length_letters && len1==len2 && are_anagrams(pool1, pool2; be_strict=be_strict)
+                            # character spans from original text
+                            rng1 = starts[i]:ends[j]
+                            rng2 = starts[k]:ends[l]
+                            push!(results, (rng1, pool1, rng2, pool2))
                         end
                     end
                 end
@@ -170,11 +151,6 @@ function scan_for_anagrams(text::String;
     return results
 end
 
-# text = "Last night I saw a gentleman; he was a really elegant man.";
-# matches = scan_for_anagrams(text, min_length_letters=1, max_length_letters=14, max_distance_words=10,print_results=true)
-# matches = scan_for_anagrams(text, min_length_letters=1, max_length_letters=14, max_distance_words=10, be_strict=true)
-# matches = scan_for_anagrams(text, min_length_letters=5, max_length_letters=14, max_distance_words=10)
-
-# text = clean_read("../texts/paradise_lost.txt", newline_replace="/"); text[1:100]
-# out = @timev scan_for_anagrams(text, min_length_letters=5, max_length_letters=14, max_distance_words=10, 
-#     be_strict=true, print_results=true)
+# text = clean_read("texts/paradise_lost.txt", newline_replace="/"); text[1:100]
+# text = text[1:200_000]
+# @time scan_for_anagrams(text, min_length_letters=5, max_length_letters=14, max_distance_words=10, be_strict=true, print_results=true)

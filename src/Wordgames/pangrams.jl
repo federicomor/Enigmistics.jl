@@ -13,7 +13,7 @@ julia> is_pangram("The quick ORANGE fox jumps over the lazy dog", verbose=true)
 [ Info: Missing character(s): ['b', 'w']
 false
 
-julia> is_pangram("The quick BROWN fox jumps over the lazy dog", verbose=true)
+julia> is_pangram("The quick BROWN fox jumps over the lazy dog")
 true
 
 julia> is_pangram("Pranzo d'acqua fa volti sghembi") # false due to the default alphabet being english
@@ -23,45 +23,36 @@ julia> is_pangram("Pranzo d'acqua fa volti sghembi", language="it")
 true
 ```
 """
-function is_pangram(s::AbstractString; language="en", verbose=false, normalize=true)
-    if normalize s = normalize_accents(lowercase(s)) end
-    # @info s
+function is_pangram(s::AbstractString; language="en", verbose=false)
+    s = normalize_accents(lowercase(s))
     alphabet = language_corrections[language]
-    s_set = Set(collect(s))
-    out = setdiff(alphabet,s_set)
-    if isempty(out)
-        return true
-    else
-        if verbose @info "Missing character(s): $out" end
-        return false
-    end
-end
+    seen = falses(length(alphabet))
+    remaining = length(alphabet)
 
-function highlight_letter(s::AbstractString, letters::String)
     for c in s
-        # @show c
-        if occursin(strip_text(c),strip_text(letters))
-            printstyled(c, underline=false, bold=true, color=:magenta)
-            # print("_$c _")
-        else
-            print(c)
+        @inbounds for (i, a) in pairs(alphabet)
+            if c == a && !seen[i]
+                seen[i] = true
+                remaining -= 1
+                remaining == 0 && return true
+                break
+            end
         end
     end
+
+    if verbose && remaining > 0
+        missing = alphabet[.!seen]
+        @info "Missing character(s): $missing"
+    end
+    return false
 end
-highlight_letter(s::AbstractString, letter::Char) = highlight_letter(s::AbstractString, string(letter))
 
-
-# highlight_letter("The quick brown fox jumps over the lazy dog","bw")
-# highlight_letter("Davvero è così","è")
-
-# is_pangram("The quick orange fox jumps over the lazy dog", verbose=true)
+# is_pangram("The quick orange fox jumps over the lazy dog")
 # is_pangram("The quick brown fox jumps over the lazy dog", verbose=true)
 # is_pangram("Pranzo d'acqua fa volti sghembi") # false due to the default alphabet being english
 # is_pangram("Pranzo d'acqua fa volti sghembi", language="it")
 # is_pangram("Pranzò d'acqùa fa vòlti sghembi", language="it")
 # is_pangram("Pranzò d'acqùa fa vòlti sghembi", language="it", normalize=false)
-
-
 
 """
 ```
@@ -105,24 +96,19 @@ function scan_for_pangrams(text::AbstractString; max_length_letters::Int=80,
                             print_results::Bool=false)
 
     # precompute words and positions
-    cleaned_text = normalize_accents(lowercase(text))
-    # matches = collect(eachmatch(r"\w+", text))
-    matches = collect(eachmatch(r"\p{L}+", text))
+    matches = collect(eachmatch(r"\p{L}+", text)) # separe words by runs of letters only
     words = [m.match for m in matches]
     starts = [m.offset for m in matches]
     ends = [m.offset + lastindex(m.match) - 1 for m in matches]
+    
     n = length(words)
-
     results = []
-    clean_candidate = ""
-    candidate = ""
-    pool_words = [] # each element: (word, start_char, end_char)
     p = Progress(n, desc="Scanning for pangrams...")
+    pool_words = [] # each element: (word, start_char, end_char)
 
     for i in 1:n
         # add next word to pool
         push!(pool_words, (words[i], starts[i], ends[i]))
-
         # shrink pool from front if too long
         while sum(count_letters(w[1]) for w in pool_words) > max_length_letters && length(pool_words) >= 2
             popfirst!(pool_words)
@@ -131,9 +117,9 @@ function scan_for_pangrams(text::AbstractString; max_length_letters::Int=80,
         if !isempty(pool_words)
             start_char = pool_words[1][2]
             end_char = pool_words[end][3]
-            clean_candidate = SubString(cleaned_text, start_char:end_char)
-            if is_pangram(clean_candidate, language=language, verbose=verbose, normalize=false)
-                candidate = SubString(text, start_char:end_char)
+            candidate = SubString(text, start_char:end_char)
+
+            if is_pangram(candidate, language=language, verbose=verbose)
                 push!(results, (start_char:end_char, candidate))
             end
         end
@@ -143,8 +129,10 @@ function scan_for_pangrams(text::AbstractString; max_length_letters::Int=80,
 
     if print_results
         println("Pangrams found:")
+        if length(results) == 0
+            println("(none)"); return results
+        end
         for (idx, (rng, phrase)) in enumerate(results)
-            # println(lpad(idx,2), ") ", rng, ": ", phrase)
             println(lpad(idx, 2), ") ($(count_letters(phrase)) letters) ", rng, ": ", phrase)
         end
     end
@@ -152,9 +140,7 @@ function scan_for_pangrams(text::AbstractString; max_length_letters::Int=80,
     return results
 end
 
-
-text = clean_read("texts/paradise_lost.txt", newline_replace="/"); text[1:100]
-# text = snip(text,21698:21804,20)
-@time scan_for_pangrams(text, max_length_letters=80, language="en",print_results=true)
-# text = clean_read("../texts/divina_commedia.txt", newline_replace="/"); text[1:100]
+# text = clean_read("texts/paradise_lost.txt", newline_replace="/"); text[1:100]
+# scan_for_pangrams(text, max_length_letters=80, language="en",print_results=true)
+# text = clean_read("texts/divina_commedia.txt", newline_replace="/"); text[1:100]
 # @time scan_for_pangrams(text, max_length_letters=50, language="it")

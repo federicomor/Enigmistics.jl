@@ -48,6 +48,8 @@ for t in texts
     scan_for_tautograms(text, min_length_words= t=="divina_commedia.txt" || t=="canzoniere.txt" ? 4 : 5, max_length_words=20, print_results=true);
 end
 
+text = clean_read("texts/divina_commedia.txt", newline_replace="/");
+
 printstyled("\n==== Pangrammi: sequenze di parole che contengono tutte le lettere dell'alfabeto ====\n", bold=true )
 for t in texts
     text = clean_read("texts/$t", newline_replace="/");

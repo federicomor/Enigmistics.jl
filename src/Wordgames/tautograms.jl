@@ -14,25 +14,24 @@ julia> is_tautogram("She sells sea shells by the sea shore.") # "by" and "the" b
 false
 ```
 """
-function is_tautogram(s::AbstractString)
+function is_tautogram(s::AbstractString)    
     s = strip_text(s) # needed to filter only the sequence of words
-    # @info s
-    matches = collect(eachmatch(r"\w+", s))
-    words = [m.match for m in matches]
-    # words = lowercase.(words)
-    first_letter = words[1][1]
-    for w in words
-        # @show w[1]
-        if w[1] != first_letter
+    matches = eachmatch(r"\p{L}+", s)
+    first = nothing
+
+    for m in matches
+        c = m.match[1]
+        if first === nothing
+            first = c
+        elseif c != first
             return false
         end
     end
-    return isletter(first_letter)
+    return first !== nothing
 end
 
-# is_tautogram("Disney declared: 'Donald Duck definitely deserves devotion'")
-# is_tautogram("She sells sea shells by the sea shore.") # "by" and "the" break the s-streak 
-
+# @time is_tautogram("Disney declared: 'Donald Duck definitely deserves devotion'")
+# @time is_tautogram("She sells sea shells by the sea shore.") # "by" and "the" break the s-streak 
 
 """
 ```
@@ -72,7 +71,6 @@ function scan_for_tautograms(text::String;
                             print_results::Bool=false)
 
     # Precompute words and positions
-    # matches = collect(eachmatch(r"\w+", text))
     matches = collect(eachmatch(r"\p{L}+", text))
     words = [m.match for m in matches]
     starts = [m.offset for m in matches]
@@ -82,9 +80,9 @@ function scan_for_tautograms(text::String;
     initials = [lowercase(normalize_accents(w[1])) for w in words]
 
     n = length(words)
-    @assert n == length(initials)
+    # @assert n == length(initials)
     results = []
-    resulting_words = []
+    len_resulting_words = []
 
     p = Progress(n, desc="Scanning for tautograms...")
     for i in 1:n
@@ -100,7 +98,7 @@ function scan_for_tautograms(text::String;
                 if allequal(pool)
                     rng = starts[i]:ends[j]
                     push!(results, (rng, text[rng]))
-                    push!(resulting_words, words[i:j])
+                    push!(len_resulting_words, j-i+1)
                 else 
                     break # no point in extending further; 
                     # adding words wont make a tautogram if the curernt one already is not
@@ -114,14 +112,12 @@ function scan_for_tautograms(text::String;
         println("Tautograms found:")
         if length(results) == 0
             println("(none)")
-        else
-            for (idx, (rng, phrase)) in enumerate(results)
-                # println(lpad(idx, 2), ") ", rng, ": ", phrase)
-                println(lpad(idx, 2), ") ($(length(resulting_words[idx])) words, $(count_letters(phrase)) chars) ", rng, ": ", text[rng])
-            end
+        end
+        for (idx, (rng, phrase)) in enumerate(results)
+            println(lpad(idx, 2), ") ($(len_resulting_words[idx]) words, $(count_letters(phrase)) chars) ", rng, ": ", text[rng])
         end
     end
-
+    
     return results
 end
 

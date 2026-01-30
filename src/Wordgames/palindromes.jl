@@ -15,16 +15,29 @@ true
 ```
 """
 function is_palindrome(s::AbstractString)
-    letters = [lowercase(c) for c in s if isletter(c)]
-    return letters == reverse(letters)
-        # do not consider palindromes sequences of words which are just repetitions
-        # s_clean = strip_text(s)
-        # return length(Set(split(s_clean))) > 1
-    # end
-    # return false
+    i = firstindex(s); j = lastindex(s)
+    while i < j
+        ci = s[i]; cj = s[j]
+        if !isletter(ci)
+            i = nextind(s, i)
+            continue
+        end
+        if !isletter(cj)
+            j = prevind(s, j)
+            continue
+        end
+        lowercase(normalize_accents(ci)) != lowercase(normalize_accents(cj)) && return false
+        i = nextind(s, i); j = prevind(s, j)
+    end
+    return true
 end
 
+
 # is_palindrome("Never odd or even.")
+# @time is_palindrome("ànna")
+# @time is_palindrome("ana")
+# @time is_palindrome("Oozy rat in a sanitary zoo")
+# @time is_palindrome("Alle carte t'alleni nella tetra cella")
 
 """
 ```
@@ -63,27 +76,25 @@ function scan_for_palindromes(text::String;
                             print_results::Bool=false)
 
     # Precompute words and positions
-    matches = collect(eachmatch(r"\w+", text))
+    matches = collect(eachmatch(r"\p{L}+", text))
     words = [m.match for m in matches]
     starts = [m.offset for m in matches]
     ends = [m.offset + lastindex(m.match) - 1 for m in matches]
 
     n = length(words)
     results = []
-
     p = Progress(n, desc="Scanning for palindromes...")
+
     for i in 1:n
         for j in i:n
             # Extract substring from original text
             phrase = text[starts[i]:ends[j]]
-
             len = count_letters(phrase)
 
             if len > max_length_letters
                 break
             end
             if len >= min_length_letters
-                # @show phrase
                 if is_palindrome(phrase)
                     push!(results, (starts[i]:ends[j], phrase))
                 end
@@ -94,8 +105,10 @@ function scan_for_palindromes(text::String;
 
     if print_results
         println("Palindromes found:")
+        if length(results) == 0
+            println("(none)")
+        end
         for (idx, (rng, phrase)) in enumerate(results)
-            # println(lpad(idx, 2), ") ", rng, ": ", phrase)
             println(lpad(idx, 2), ") ($(count_letters(phrase)) chars) ", rng, ": ", phrase)
         end
     end
@@ -103,6 +116,7 @@ function scan_for_palindromes(text::String;
     return results
 end
 
-# text = clean_read("../texts/ulyss.txt", newline_replace="/"); text[1:100]
-# out = scan_for_palindromes(text,  min_length_letters=10, print_results=true)
+# text = clean_read("texts/ulyss.txt", newline_replace="/"); text[1:100]
+# text = text[1:500_000]
+# @time scan_for_palindromes(text, min_length_letters=10, print_results=true)
 # snip(text,266082:266096,30)

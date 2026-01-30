@@ -26,53 +26,34 @@ true
 ```
 """
 function is_abecedary(s::AbstractString; language="en")
-    # words = split(s, c -> !isletter(c), keepempty=false)
-    # words = @. normalize_accents(lowercase(words))
     words = split(strip_text(s))
     length(words) < 2 && return false
 
     idx_map = alphabet_index[language] # see constants.jl for more details
-
+    # find starting index 
     first_letter = lowercase(words[1][1])
-    # find starting index (without allocating)
     idx = get(idx_map, first_letter, 0)
-    # so avoiding this:
-    # idx = findfirst(alphabet .== words[1][1]) 
-    # or this:
-    # idx = 0; for i in 1:la
-    #     if alphabet[i] == first_letter
-    #         idx = i; break
-    #     end
-    # end
     idx == 0 && return false
 
     la = length(idx_map)
     for k in 2:length(words)
+        # increment idx to point to the next letter in the alphabet (wrapping around if needed)
         idx = mod1(idx + 1, la)
-        if !haskey(idx_map, lowercase(words[k][1])) ||
-           idx_map[lowercase(words[k][1])] != idx
+        # if initial letter is not the expected one, return false
+        if !haskey(idx_map, lowercase(words[k][1])) || idx_map[lowercase(words[k][1])] != idx
             return false
         end
     end
-
     return true
 end
 
-
-# s = "ma non oppure possiamo? la volpe bianca ch'alzava 'l muso. salta sopra il cane grigio"
-# s_set = split(s,r"[ |'|.]+")
-# s_set = split(s,c -> !isletter(c), keepempty=false)
-
-# is_abecedary("Amore baciami! Con dolci effusioni fammi 
-#     gioire! Ho illibate labbra, meraviglioso nido ove puoi 
-#     quietare recondita sensualità traboccante. Ubriachiamoci 
-#     vicendevolmente, Zaira!", language="it")
-# is_abecedary("Love me! Not only ...", language="it")
-# @time is_abecedary("Amore baciami! Con dolci effusioni fammi giore!", language="it")
-
-# is_abecedary("A bright, clear day, xen", language="it")
-# is_abecedary("A bright, lovely day") # the L of lovely breaks the alphabetic streak
-# @time is_abecedary("Testing: u v w x y z a b c") # wraps by default around the alphabet
+# is_abecedary( # from Isidoro Bressan, "La Stampa", 18/10/1986
+#        "Amore baciami! Con dolci effusioni fammi gioire! Ho illibate labbra, 
+#        meraviglioso nido ove puoi quietare recondita sensualità traboccante. 
+#        Ubriachiamoci vicendevolmente, Zaira!", language="it")
+# is_abecedary("A Bright Celestial Dawn Emerges")
+# is_abecedary("A Bright Celestial Dawn Rises") # R breakes the alphabetic streak
+# is_abecedary("Testing: u v w x y z a b c") # wraps by default around the alphabet
 
 """
 ```
@@ -121,9 +102,8 @@ function scan_for_abecedaries(text::AbstractString;
                             min_length_words::Int=4, max_length_words=30, language::String="en",
                             print_results::Bool=false)
 
-    # Precompute words and positions
-    # matches = collect(eachmatch(r"\w+", text))
-    matches = collect(eachmatch(r"\p{L}+", text))
+    # precompute words and positions
+    matches = collect(eachmatch(r"\p{L}+", text)) # separe words by runs of letters only
     words = [m.match for m in matches]
     starts = [m.offset for m in matches]
     ends = [m.offset + lastindex(m.match) - 1 for m in matches]
@@ -136,12 +116,10 @@ function scan_for_abecedaries(text::AbstractString;
         # grow window forward
         for j in i+1:min(i + max_length_words - 1, n)
             len = j - i + 1
-            # @info len
             len < min_length_words && continue
             candidate = SubString(text, starts[i]:ends[j])
-            # @info "surpassing min_length_words check"
-            # @info candidate
-            if is_abecedary(candidate, language = language) && length(split(candidate,c -> !isletter(c), keepempty=false)) >= min_length_words
+            # @assert len == length(split(candidate, c -> !isletter(c), keepempty=false))
+            if len >= min_length_words && is_abecedary(candidate, language = language)
                 push!(results, (starts[i]:ends[j], candidate))
             else
                 # if this prefix fails, longer ones will also fail
@@ -150,13 +128,13 @@ function scan_for_abecedaries(text::AbstractString;
         end
         next!(p)
     end
+
     if print_results
         println("Abecedaries found:")
         if length(results) == 0
             println("(none)"); return results
         end
         for (idx, (rng, phrase)) in enumerate(results)
-            # println(lpad(idx,2), ") ", rng, ": ", phrase)
             println(lpad(idx, 2), ") ($(length(split(phrase,c -> !isletter(c), keepempty=false))) words, $(count_letters(phrase)) chars) ", rng, ": ", phrase)
         end
     end
@@ -164,13 +142,6 @@ function scan_for_abecedaries(text::AbstractString;
     return results
 end
 
-# s = "Amore baciami! Con dolci effusioni fammi giore!"
-# scan_for_abecedaries(s, min_length_words=3, max_length_words=6, language="it", print_results=true)
-
 # text = clean_read("texts/paradise_lost.txt", newline_replace="/");
-# scan_for_abecedaries(text, min_length_words=4, max_length_words=5, language="en")
 # text = clean_read("texts/divina_commedia.txt", newline_replace="/");
-# text = clean_read("texts/tragedie_inni_sacri_odi.txt", newline_replace="/");
-# text = snip(text,3875:3896,40)
-# scan_for_abecedaries(text, min_length_words=4, max_length_words=4, language="it", print_results=true)
-
+# @time scan_for_abecedaries(text, min_length_words=4, max_length_words=5, language="en")

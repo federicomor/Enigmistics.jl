@@ -5,8 +5,8 @@ using Random
 using Logging
 
 @info "==== Wordgames section loading ===="
-@info "Including Wordgames/constants.jl";   include("Wordgames/constants.jl")
-@info "Including Wordgames/text_utils.jl";  include("Wordgames/text_utils.jl")
+@info "Including Wordgames/_constants.jl";   include("Wordgames/_constants.jl")
+@info "Including Wordgames/_text_utils.jl";  include("Wordgames/_text_utils.jl")
 @info "Including Wordgames/pangrams.jl";    include("Wordgames/pangrams.jl")
 @info "Including Wordgames/anagrams.jl";    include("Wordgames/anagrams.jl")
 @info "Including Wordgames/heterograms.jl"; include("Wordgames/heterograms.jl")

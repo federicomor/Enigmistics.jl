@@ -16,27 +16,21 @@ julia> is_lipogram("If youth, throughout all history, had had a champion to stan
        atoms, into which God has put a mystic possibility for noticing an adult’s act, and figuring
        out its purport", "e", verbose=true)
 true
+
+julia> is_lipogram("The quick brown fox","abc",verbose=true)
+[ Info: Letter(s) present from wrt: Set(['c', 'b'])
+false
 ```
 """
 function is_lipogram(s::AbstractString, wrt::AbstractString; verbose=false)
-    ## old simple version:
-    # letters = Set([lowercase(c) for c in s if isletter(c)])
-    # wrt_set = Set([lowercase(c) for c in wrt if isletter(c)])
-    # out = intersect(wrt_set, letters)
-    # if isempty(out)
-    #     return true
-    # else
-    #     if verbose @info "Letter(s) present from wrt: $out" end
-    #     return false
-    # end
-    ## slightly more efficient:
-    wrt_set = Set(lowercase(c) for c in wrt if isletter(c))
+    s = strip_text(s)
+    wrt_set = Set(normalize_accents(lowercase(c)) for c in wrt if isletter(c))
     for c in s
-        isletter(c) || continue
-        cl = lowercase(c)
-        if cl in wrt_set
+        isletter(c) || continue # skip non-letters (eg. spaces, punctuation)
+        if c in wrt_set
             if verbose
-                @info "Letter(s) present from wrt: $(Set([cl]))"
+                @info "Letter(s) present from wrt: $(intersect(wrt_set, Set(c for c in s if isletter(c))))"
+                highlight_letter(s,wrt); println()
             end
             return false
         end
@@ -44,10 +38,9 @@ function is_lipogram(s::AbstractString, wrt::AbstractString; verbose=false)
     return true
 end
 
-
-# @time is_lipogram("This is a small writing without using a famous symbol following B","e", verbose=true)
-# @time is_pangram("The quick brown fox jumps over the lazy cat"; verbose=true)
+# @time is_lipogram("This is a small thought without using a famous symbol following D","e", verbose=true)
 # @time is_lipogram("The quick brown fox jumps over the lazy cat","dgef",verbose=true) # 'd' and 'g' are missing
+# @time is_lipogram("The quick brown fox","abc",verbose=true) # 'd' and 'g' are missing
 
 """
 ```
@@ -82,21 +75,20 @@ function scan_for_lipograms(text::String, wrt::String;
                             min_length_letters::Int=30,max_length_letters::Int=100,
                             print_results::Bool=false)
 
-    # Precompute words and positions
-    matches = collect(eachmatch(r"\w+", text))
+    # precompute words and positions
+    matches = collect(eachmatch(r"\p{L}+", text)) # separe words by runs of letters only
     words = [m.match for m in matches]
     starts = [m.offset for m in matches]
     ends = [m.offset + lastindex(m.match) - 1 for m in matches]
 
     n = length(words)
     results = []
-
     p = Progress(n, desc="Scanning for lipograms...")
+
     for i in 1:n
         for j in i:n
             # Extract substring from original text
             phrase = text[starts[i]:ends[j]]
-
             len = count_letters(phrase)
 
             if len > max_length_letters
@@ -116,9 +108,10 @@ function scan_for_lipograms(text::String, wrt::String;
 
     if print_results
         println("Lipograms found:")
+        if length(results) == 0
+            println("(none)"); return results
+        end
         for (idx, (rng, phrase)) in enumerate(results)
-            # println(lpad(idx, 2), ") ", rng, ": ", phrase)
-            # @show phrase
             println(lpad(idx, 2), ") ($(count_letters(phrase)) letters) ", rng, ": ", phrase)
         end
     end
@@ -127,14 +120,4 @@ function scan_for_lipograms(text::String, wrt::String;
 end
 
 # text = clean_read("texts/paradise_lost.txt", newline_replace="/"); text[1:100]
-# @time scan_for_lipograms(text, "ea", min_length_letters=42,print_results=true)
-
-# text = clean_read("../texts/all_shakespeare.txt", newline_replace="/"); text[1:100]
-# scan_for_lipograms(text, "eta", min_length_letters=34,print_results=true) # "ETA" are the most common letters in english
-# text = clean_read("../texts/brothers_karamazov.txt", newline_replace="/")
-# scan_for_lipograms(text, "eta", min_length_letters=30,print_results=true) # "ETA" are the most common letters in english
-# scan_for_lipograms(text, "aef", min_length_letters=40)
-
-
-# text = clean_read("../texts/promessi_sposi.txt", newline_replace="/"); text[1:100]
-# scan_for_lipograms(text, "io", min_length_letters=35, max_length_letters=80)
+# @time scan_for_lipograms(text, "ea", min_length_letters=40,print_results=true)

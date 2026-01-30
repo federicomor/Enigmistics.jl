@@ -1,4 +1,23 @@
 """
+    clean_text(s::AbstractString; newline_replace=" ")
+
+Take a string and return a cleaned up version of it.
+
+This allows to work better with the functions of the Enigmistics module. For example: multiple occurrences of newlines, spaces, or tabs get reduced to a single space (newlines information can be preserved by setting a different character in `newline_replace`). 
+
+It's the function on which [`clean_read`](@ref) relies on.
+"""
+function clean_text(s::AbstractString; newline_replace=" ")
+    s_clean = s |> 
+        # x -> normalize_accents(x) |>
+        x -> replace(x, "\n|\t" => " ") |> # convert new lines to spaces
+        x -> replace(x, r" {2,}" => " $newline_replace ") |> # so that when there are more spaces it means that there was a newline
+        x -> replace(x, r" {2,}" => " ") # and finally adjust multiple spaces to a single one
+    return s_clean
+end
+
+
+"""
     clean_read(filename::AbstractString; newline_replace=" ")
 
 Read a text file and return a string containing its contents.
@@ -35,23 +54,6 @@ function clean_read(filename::AbstractString; newline_replace=" ")
     return clean_text(s,newline_replace=newline_replace)
 end
 
-"""
-    clean_text(s::AbstractString; newline_replace=" ")
-
-Take a string and return a cleaned up version of it.
-
-This allows to work better with the functions of the Enigmistics module. For example: multiple occurrences of newlines, spaces, or tabs get reduced to a single space (newlines information can be preserved by setting a different character in `newline_replace`). 
-
-It's the function on which [`clean_read`](@ref) relies on.
-"""
-function clean_text(s::AbstractString; newline_replace=" ")
-    s_clean = s |> 
-        # x -> normalize_accents(x) |>
-        x -> replace(x, "\n|\t" => " ") |> # convert new lines to spaces
-        x -> replace(x, r" {2,}" => " $newline_replace ") |> # so that when there are more spaces it means that there was a newline
-        x -> replace(x, r" {2,}" => " ") # and finally adjust multiple spaces to a single one
-    return s_clean
-end
 
 """
     strip_text(text)
@@ -71,23 +73,8 @@ function strip_text(s::AbstractString)
             w->replace(w,r" {2,}" => " ") |> # reduce multiple spaces to single one
             w->replace(w, r"^\s+|\s+$" => "") # strip leading/trailing spaces
 end
-# strip_text("This? is a -very simple- test!! nòw morè còmplèx")
+strip_text(c::Char) = strip_text(string(c)) 
 
-
-# filename = joinpath(@__DIR__,"../texts/commedia.txt")
-# filename = joinpath(@__DIR__,"../texts/paradiselost.txt")
-
-# text=readlines(filename)[1:20] # original file
-# clean_text(join(text,"\n"),newline_replace="")
-
-# join(readlines(filename), "\n")[1:104]
-
-# clean_read(filename)[1:98]
-# clean_read(filename, newline_replace="/")[1:98]
-
-# s = join(readlines(filename), "\n")[1:104]
-# @show s
-# clean_text(s,newline_replace="/")
 
 """
     count_letters(s::AbstractString)
@@ -108,14 +95,9 @@ julia> length(s) # 36 = 31 letters + 4 spaces + 1 hyphen
 function count_letters(s::AbstractString)
     return sum(isletter.(char for char in s))
 end
-function count_letters(s::AbstractVector)
+function count_letters(s::Vector{String})
     return sum(count_letters.(s))
 end
-
-# s = "This sentence has sixty-four alphabetic characters and 10 non alphabetic ones!" 
-# s = "This sentence has thirty-one letters" 
-# count_letters(s) # 31
-# length(s) # 36 = 31 + 4 spaces + 1 hyphen
 
 
 """
@@ -137,10 +119,29 @@ julia> snip(text,13:14,2)
 function snip(text::String, rng::UnitRange{Int}, pad=10)
     real_start = max(1,rng.start-pad) 
     real_end = min(length(text),rng.stop+pad) 
-    # @show real_start real_end
     return text[real_start:real_end]
 end
 
 # text = "abcdefghijklmnopqrstuvwxyz";
 # snip(text,13:14,0)
 # snip(text,13:14,4)
+
+
+"""
+    highlight_letter(s::AbstractString, letters::AbstractString)
+    highlight_letter(s::AbstractString, letter::AbstractChar)
+
+Highlight in the string `s` all occurrences of the letters in `letters` (or the single `letter`), by printing them in a bold and coloured font.
+"""
+function highlight_letter(s::AbstractString, letters::AbstractString)
+    s = strip_text(s)
+    letters = strip_text(letters)
+    for c in s
+        if occursin(c,letters)
+            printstyled(c, underline=false, bold=true, color=:magenta)
+        else
+            print(c)
+        end
+    end
+end
+highlight_letter(s::AbstractString, letter::AbstractChar) = highlight_letter(s::AbstractString, string(letter))
