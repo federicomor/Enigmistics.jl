@@ -7,9 +7,9 @@ DocMeta.setdocmeta!(Enigmistics, :DocTestSetup, :(using Enigmistics); recursive=
 makedocs(
     sitename = "Enigmistics.jl",
     format = Documenter.HTML(
-        repolink = "https://github.com/federicomor/Enigmistics",
-        # repolink = "...", # if testing locally
-        inventory_version = "0.1.0"
+        repolink = "https://github.com/federicomor/Enigmistics"
+        # repolink = "...", # if testing locally?
+        # inventory_version = "0.1.0" # if testing locally?
     ),  
     modules = [Enigmistics], doctest = true, # run doctests
     checkdocs=:exports, # check for docstrings only on exported functions
@@ -17,12 +17,12 @@ makedocs(
         "index.md",
         "wordgames.md",
         "crosswords.md"
-        ],
-    remotes = nothing
+        ]
+    # remotes = nothing # if testing locally?
 )
 
 deploydocs(
     repo = "github.com/federicomor/Enigmistics.jl",
-    devbranch = "main",
+    branch = "main",
     versions = nothing
 )
