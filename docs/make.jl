@@ -1,8 +1,8 @@
 # julia --color=yes --project make.jl
 push!(LOAD_PATH,"../src/")
 
-using Pkg
-pkg"add https://github.com/federicomor/Enigmistics.jl.git#main"
+# using Pkg
+# pkg"add https://github.com/federicomor/Enigmistics.jl.git#main"
 
 using Enigmistics, Documenter
 
