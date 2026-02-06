@@ -23,6 +23,7 @@ export is_lipogram, scan_for_lipograms
 export is_palindrome, scan_for_palindromes
 export is_tautogram, scan_for_tautograms
 export is_abecedary, scan_for_abecedaries
+@info "============ finished Wordgames exports"
 
 @info "==== Crosswords section loading ===="
 @info "Including Crosswords/grid_utils.jl"; include("Crosswords/grid_utils.jl")
@@ -31,13 +32,12 @@ export is_abecedary, scan_for_abecedaries
 @info "Including Crosswords/dictionary.jl"; include("Crosswords/dictionary.jl")
 @info "Including Crosswords/automation.jl"; include("Crosswords/automation.jl")
 
-# export create_grid, show_grid, 
-    # insert_row_above, insert_row_below, insert_col_right, insert_col_left, enlarge, shrink
-
 export CrosswordWord, CrosswordBlackCell, CrosswordPuzzle, show_crossword, example_crossword
 export enlarge!, shrink!, can_place_word, place_word!, remove_word!, place_black_cell!, remove_black_cell!
-export patterned_crossword, striped_crossword
-export save_crossword, load_crossword # Crosswords/io.jl
-export Slot, find_constrained_slots # Crosswords/automation.jl
+export patterned_crossword, striped_crossword, clear!
+export save_crossword, load_crossword
+export setup_dictionary
+export Slot, find_constrained_slots, compute_options_simple, compute_options_split, compute_options_flexible
+@info "============ finished Crosswords exports"
 
 end # module Enigmistics

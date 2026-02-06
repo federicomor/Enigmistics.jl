@@ -105,23 +105,23 @@ Find all slots (horizontal and vertical) in the crossword puzzle `cw` that are c
 
 # Examples
 ```julia-repl
-julia> cw
+julia> cw = example_crossword(type="partial")
     1  2  3  4  5  6 
   ┌──────────────────┐
 1 │ G  O  L  D  E  N │
-2 │ A  N  ■  O  ■  ⋅ │
-3 │ T  ■  S  O  U  R │
-4 │ E  V  E  R  ■  ⋅ │
-5 │ ■  I  E  ■  ■  ⋅ │
-6 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+2 │ A  N  ■  ⋅  ■  A │
+3 │ T  ■  ⋅  ⋅  ⋅  R │
+4 │ E  V  E  R  ■  R │
+5 │ ■  I  E  ■  ■  O │
+6 │ ⋅  I  ⋅  ⋅  ⋅  W │
   └──────────────────┘
 
 julia> find_constrained_slots(cw)
 4-element Vector{Slot}:
- Slot(6, 1, :horizontal, 6, "......", true, true)
- Slot(4, 2, :vertical, 3, "VI.", false, true)
- Slot(3, 3, :vertical, 4, "SEE.", false, true)
- Slot(1, 6, :vertical, 6, "N.R...", true, true)
+ Slot(3, 3, :horizontal, 4, "...R", false, true)
+ Slot(6, 1, :horizontal, 6, ".I...W", true, true)
+ Slot(3, 3, :vertical, 4, ".EE.", false, true)
+ Slot(1, 4, :vertical, 4, "D..R", true, false)
 ```
 """
 function find_constrained_slots(cw::CrosswordPuzzle)
@@ -131,20 +131,88 @@ function find_constrained_slots(cw::CrosswordPuzzle)
     )
 end
 
+"""
+    compute_options_simple(s::Slot)
 
-function compute_options_simple(s::Slot)
+Compute the number of fitting words for a slot `s` considering only its given pattern.
+
+Returns a tuple `(n_options, candidates)`, where `n_options` is the number of fitting words and `candidates` is a vector containing the list of fitting words.
+
+# Examples
+```julia-repl
+julia> cw = example_crossword(type="partial")
+    1  2  3  4  5  6 
+  ┌──────────────────┐
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  ⋅  ■  A │
+3 │ T  ■  ⋅  ⋅  ⋅  R │
+4 │ E  V  E  R  ■  R │
+5 │ ■  I  E  ■  ■  O │
+6 │ ⋅  I  ⋅  ⋅  ⋅  W │
+  └──────────────────┘
+
+julia> slots = find_constrained_slots(cw); slots[2]
+Slot(6, 1, :horizontal, 6, ".I...W", true, true)
+
+julia> compute_options_simple(slots[2], verbose=true)
+- simple fitting, length: 6 => #options: 18
+      some are ["billow", "dismaw", "disnew", "jigsaw", "killow", "kirmew", "mildew", "minnow", "pigmew", "pillow"]
+(18, ["billow", "dismaw", "disnew", "jigsaw", "killow", "kirmew", "mildew", "minnow", "pigmew", "pillow", "pitsaw", "rillow", "ripsaw", "siddow", "willow", "window", "winnow", "winrow"])
+```
+"""
+function compute_options_simple(s::Slot; verbose=false)
     p = s.pattern
     p = '^'*p*'$' # fixing start and end positions, actually not necessary since length is constricted
     out = fitting_words(Regex(lowercase(p)),s.length,s.length)
     n_options = length(out[s.length])
-    @info "- length: $(s.length) => #options: $n_options"
-    @info "\t $(out[s.length][1:min(n_options,10)])"
-    return n_options, out
+    if verbose println("- simple fitting, length: $(s.length) => #options: $n_options") end
+    if verbose println("      $(n_options<=10 ? "they are" : "some are") $(out[s.length][1:min(n_options,10)])") end
+    return n_options, out[s.length]
 end
-function compute_options_split(s::Slot)
+"""
+    compute_options_split(s::Slot)
+
+Compute the number of fitting words for a slot `s` by simulating the placement of black cells at each internal position of the slot, i.e. possibly splitting it into two smaller slots.
+
+Returns a tuple `(n_options, candidates)`, where `n_options` is a dictionary mapping the internal position of the black cell to the number of fitting words, and `candidates` is a dictionary mapping that same key to a tuple of two lists of fitting words (left and right sub-slots).
+
+# Examples
+```julia-repl
+julia> cw = example_crossword(type="partial")
+    1  2  3  4  5  6 
+  ┌──────────────────┐
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  ⋅  ■  A │
+3 │ T  ■  ⋅  ⋅  ⋅  R │
+4 │ E  V  E  R  ■  R │
+5 │ ■  I  E  ■  ■  O │
+6 │ ⋅  I  ⋅  ⋅  ⋅  W │
+  └──────────────────┘
+
+julia> slots = find_constrained_slots(cw); slots[2]
+Slot(6, 1, :horizontal, 6, ".I...W", true, true)
+
+julia> compute_options_split(slots[2], verbose=true)
+- placing a black cell at (6, 1), pattern: /I...W => #options: 7
+      they are ["ignaw", "immew", "inbow", "indew", "indow", "inlaw", "inmew"]
+- placing a black cell at (6, 3), pattern: .I/..W => #options: 20/53
+      some are Left: ["ai", "bi", "di", "fi", "gi", "hi", "ii", "yi", "ji", "ki"]
+      some are Right: ["alw", "baw", "bow", "caw", "ccw", "ckw", "cow", "csw", "daw", "dew"]
+- placing a black cell at (6, 4), pattern: .I./.W => #options: 212/10
+      some are Left: ["aid", "aik", "ail", "aim", "ain", "air", "ais", "ait", "aix", "bib"]
+      they are Right: ["aw", "ew", "fw", "hw", "iw", "kw", "mw", "ow", "sw", "xw"]
+- placing a black cell at (6, 5), pattern: .I../W => #options: 852
+      some are ["aias", "aide", "aids", "aiel", "aile", "ails", "aims", "aine", "ains", "aint"]
+(Dict(5 => 852, 4 => 2120, 3 => 1060, 1 => 7), Dict(5 => [["aias", "aide", "aids", "aiel", "aile", "ails", "aims", "aine", "ains", "aint"  …  "zinc", "zing", "zink", "zion", "zipa", "zips", "zira", "ziti", "zits", "zizz"], [""]], 4 => [["aid", "aik", "ail", "aim", "ain", "air", "ais", "ait", "aix", "bib"  …  "wis", "wit", "wiz", "xii", "xis", "xiv", "xix", "zig", "zip", "zit"], ["aw", "ew", "fw", "hw", "iw", "kw", "mw", "ow", "sw", "xw"]], 3 => [["ai", "bi", "di", "fi", "gi", "hi", "ii", "yi", "ji", "ki", "li", "mi", "ni", "pi", "si", "ti", "ui", "vi", "wi", "xi"], ["alw", "baw", "bow", "caw", "ccw", "ckw", "cow", "csw", "daw", "dew"  …  "sew", "sow", "taw", "tew", "tow", "usw", "vaw", "vow", "waw", "wow"]], 1 => [[""], ["ignaw", "immew", "inbow", "indew", "indow", "inlaw", "inmew"]]))
+```
+"""
+function compute_options_split(s::Slot; verbose=false)
     pattern = s.pattern
     L = length(pattern)
-    n_options = 1; out = Dict{Int64, Vector{String}}()
+    n_options = 1
+    # key is the position of the black cell (1-based index within the slot)
+    n_options_out = Dict{Int, Int}()
+    words_out = Dict{Int, Vector{Vector{String}}}()
 
     # to avoid warning from the simulation
     # Logging.LogLevel(Error)
@@ -157,7 +225,7 @@ function compute_options_split(s::Slot)
         # simulate the placement of a black cell at each internal position    
         place_black_cell!(cw, bcell_row, bcell_col)
         if !is_connected(cw)
-            println("- placing a black cell at ($bcell_row, $bcell_col) would make a disconnect crossword")
+            if verbose println("- placing a black cell at ($bcell_row, $bcell_col) would make a disconnect crossword") end
             # directly revert the test placement
             remove_black_cell!(cw, bcell_row, bcell_col)
             continue
@@ -171,23 +239,29 @@ function compute_options_split(s::Slot)
         if k<=2
             out = fitting_words(Regex(lowercase(right_pattern)),len_right,len_right)
             n_options = length(out[len_right])
-            println("- placing a black cell at ($bcell_row, $bcell_col) => k: $k, pattern: $(left_pattern*'/'*right_pattern) => #options: $n_options")
-            println("\t ", out[len_right][1:min(n_options,10)])
+            if verbose println("- placing a black cell at ($bcell_row, $bcell_col), pattern: $(left_pattern*'/'*right_pattern) => #options: $n_options") end
+            if verbose println("      $(n_options<=10 ? "they are" : "some are") $(out[len_right][1:min(n_options,10)])") end
+            push!(n_options_out, k => n_options)
+            push!(words_out, k => [[""], out[len_right]])
         elseif k>=s.length-1
             # @show left_pattern, len_left
             out = fitting_words(Regex(lowercase(left_pattern)),len_left,len_left)
             n_options = length(out[len_left])
-            println("- placing a black cell at ($bcell_row, $bcell_col) => k: $k, pattern: $(left_pattern*'/'*right_pattern) => #options: $n_options")
-            println("\t ", out[len_left][1:min(n_options,10)])
+            if verbose println("- placing a black cell at ($bcell_row, $bcell_col), pattern: $(left_pattern*'/'*right_pattern) => #options: $n_options") end
+            if verbose println("      $(n_options<=10 ? "they are" : "some are") $(out[len_left][1:min(n_options,10)])") end
+            push!(n_options_out, k => n_options)
+            push!(words_out, k => [out[len_left], [""]])
         else
             out_right = fitting_words(Regex(lowercase(right_pattern)),len_right,len_right)
             n_right = length(out_right[len_right])
             out_left = fitting_words(Regex(lowercase(left_pattern)),len_left,len_left)
             n_left = length(out_left[len_left])
             n_options = n_left * n_right
-            println("- placing a black cell at ($bcell_row, $bcell_col) => k: $k, pattern: $(left_pattern*'/'*right_pattern) => #options: $n_options")
-            println("\t Left: ", out_left[len_left][1:min(n_left,5)])
-            println("\t Right: ", out_right[len_right][1:min(n_right,5)])
+            if verbose println("- placing a black cell at ($bcell_row, $bcell_col), pattern: $(left_pattern*'/'*right_pattern) => #options: $n_left/$n_right") end
+            if verbose println("      $(n_left<=10 ? "they are" : "some are") Left: $(out_left[len_left][1:min(n_left,10)])") end
+            if verbose println("      $(n_right<=10 ? "they are" : "some are") Right: $(out_right[len_right][1:min(n_right,10)])") end
+            push!(n_options_out, k => n_options)
+            push!(words_out, k => [out_left[len_left], out_right[len_right]])
         end
 
         # revert the test placement
@@ -195,25 +269,96 @@ function compute_options_split(s::Slot)
     end
     # restore default level
     # Logging.LogLevel(Info)
+    return n_options_out, words_out
 end
-function compute_options_flexible(s::Slot, increment::Int)
-    if s.flexible_start || s.flexible_end
+"""
+    compute_options_flexible(s::Slot, k::Int)
+
+Compute the number of fitting words for a slot `s` considering its flexibility at the start and/or at the end, i.e. simulating the potential expansion in length described by `k` which could happen by enlarging the grid.
+
+Returns a tuple `(n_options, candidates)`, where `n_options` is a dictionary mapping the flexibility simulated (increment at the start and/or at the end) to the number of fitting words, and `candidates` is a dictionary mapping that same key to the list of fitting words.
+
+# Examples
+```julia-repl
+julia> cw = example_crossword(type="partial")
+    1  2  3  4  5  6 
+  ┌──────────────────┐
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  ⋅  ■  A │
+3 │ T  ■  ⋅  ⋅  ⋅  R │
+4 │ E  V  E  R  ■  R │
+5 │ ■  I  E  ■  ■  O │
+6 │ ⋅  I  ⋅  ⋅  ⋅  W │
+  └──────────────────┘
+
+julia> slots = find_constrained_slots(cw); slots[2]
+Slot(6, 1, :horizontal, 6, ".I...W", true, true)
+
+julia> compute_options_flexible(slots[2], 1, verbose=true)
+- flexible start/end, increment: (0, 1) => pattern .I...W., length: 7 => #options: 19
+      some are ["billowy", "billows", "disgown", "jigsawn", "jigsaws", "midtown", "mildewy", "mildews", "minnows", "pillowy"]
+- flexible start/end, increment: (1, 0) => pattern ..I...W, length: 7 => #options: 9
+      they are ["pristaw", "rainbow", "thishow", "trishaw", "uniflow", "whincow", "whipsaw", "whitlow", "whittaw"]
+(Dict((0, 1) => 19, (1, 0) => 9), Dict((0, 1) => ["billowy", "billows", "disgown", "jigsawn", "jigsaws", "midtown", "mildewy", "mildews", "minnows", "pillowy", "pillows", "pitsaws", "ripsaws", "willawa", "willowy", "willows", "windowy", "windows", "winnows"], (1, 0) => ["pristaw", "rainbow", "thishow", "trishaw", "uniflow", "whincow", "whipsaw", "whitlow", "whittaw"]))
+
+julia> compute_options_flexible(slots[2], 2, verbose=true)
+- flexible start/end, increment: (0, 2) => pattern .I...W.., length: 8 => #options: 33
+      some are ["bilgeway", "billywix", "billowed", "disbowel", "giveaway", "hideaway", "jigsawed", "midtowns", "mildewed", "mildewer"]
+- flexible start/end, increment: (1, 1) => pattern ..I...W., length: 8 => #options: 11
+      some are ["boildown", "chippewa", "gairfowl", "muirfowl", "rainbowy", "rainbows", "rainfowl", "thindown", "whipsawn", "whipsaws"] 
+- flexible start/end, increment: (2, 0) => pattern ...I...W, length: 8 => #options: 3
+      they are ["embillow", "splitnew", "splitsaw"]
+(Dict((0, 2) => 33, (1, 1) => 11, (2, 0) => 3), Dict((0, 2) => ["bilgeway", "billywix", "billowed", "disbowel", "giveaway", "hideaway", "jigsawed", "midtowns", "mildewed", "mildewer"  …  "widthway", "williwau", "williwaw", "willywaw", "willowed", "willower", "windowed", "winnowed", "winnower", "wittawer"], (1, 1) => ["boildown", "chippewa", "gairfowl", "muirfowl", "rainbowy", "rainbows", "rainfowl", "thindown", "whipsawn", "whipsaws", "whitlows"], (2, 0) => ["embillow", "splitnew", "splitsaw"]))
+```
+"""
+function compute_options_flexible(s::Slot, increment::Int; verbose=false)
+    # key is the increment type, so a Tuple{Int,Int} describing (increment_start, increment_end)
+    n_options_out = Dict{Tuple{Int,Int}, Int}()
+    words_out = Dict{Tuple{Int,Int}, Vector{String}}()
+    if s.flexible_start && !s.flexible_end
+        k = increment
         p = s.pattern
-        if s.flexible_start p = ".*"*p end
-        if s.flexible_end p = p*".*" end
+        p = "."^k*p
         p='^'*p*'$'
-        len = s.length+increment
+        len = s.length+k
         out = fitting_words(Regex(lowercase(p)),len,len)
         n_options = length(out[len])
-        flexibility = s.flexible_start ? "start" * (s.flexible_end ? "/end" : "") : "end"
-        println("- flexible $flexibility, increment: $increment => length: $(len) => #options: $n_options")
-        println("\t ", out[len][1:min(n_options,10)])
-        return n_options, out
+        if verbose println("- flexible start, increment: ($k, 0) => pattern $(p[2:end-1]), length: $(len) => #options: $n_options") end
+        if verbose println("      $(n_options<=10 ? "they are" : "some are") $(out[len][1:min(n_options,10)])") end
+        push!(n_options_out, (k,0) => n_options)
+        push!(words_out, (k,0) => out[len])
+    elseif !s.flexible_start && s.flexible_end
+        k = increment
+        p = s.pattern
+        p = p*"."^k
+        p='^'*p*'$'
+        len = s.length+k
+        out = fitting_words(Regex(lowercase(p)),len,len)
+        n_options = length(out[len])
+        if verbose println("- flexible end, increment: (0, $k) => pattern $(p[2:end-1]), length: $(len) => #options: $n_options") end
+        if verbose println("      $(n_options<=10 ? "they are" : "some are") $(out[len][1:min(n_options,10)])") end
+        push!(n_options_out, (0,k) => n_options)
+        push!(words_out, (0,k) => out[len])
+    elseif s.flexible_start && s.flexible_end
+        for k in 0:increment
+            p = s.pattern
+            p = "."^k*p*"."^(increment-k)
+            p='^'*p*'$'
+            len = s.length+increment
+            out = fitting_words(Regex(lowercase(p)),len,len)
+            n_options = length(out[len])
+            if verbose println("- flexible start/end, increment: ($k, $(increment-k)) => pattern $(p[2:end-1]), length: $(len) => #options: $n_options") end
+            if verbose println("      $(n_options<=10 ? "they are" : "some are") $(out[len][1:min(n_options,10)])") end
+            push!(n_options_out, (k,increment-k) => n_options)
+            push!(words_out, (k,increment-k) => out[len])
+        end
     else
-        @warn "Slot is not flexible."
+        if verbose println("Slot is not flexible.") end
         return 0, nothing
     end
+    return n_options_out, words_out
 end
+# output: dictionaries with keys (increment_start,increment_end) => values
 
 # function fit_flexible_proposal(s::Slot, increment::Int, choice::String)
     
@@ -236,6 +381,13 @@ function compute_options(s::Slot; simple::Bool=true) #, flexible::Bool, flexible
     println("==== SIMULATING BLACK CELLS ============================")
     compute_options_split(s)
 end
+
+# cw = example_crossword(type="partial")
+# slots = find_constrained_slots(cw)
+# compute_options_simple(slots[2], verbose=true)
+# compute_options_split(slots[2], verbose=true)
+# compute_options_flexible(slots[2], 1, verbose=true)
+# compute_options_flexible(slots[2], 2, verbose=true)
 
 # cd("Crosswords")
 # cw = load_crossword("ex_eng.txt")
@@ -286,23 +438,51 @@ end
 # end
 # fill!(cw)
 
-function fill!(cw::CrosswordPuzzle; seed=rand(Int), iteration=0, verbose=false)
-    # print("Iteration: $iteration\r")
-    # if iteration%4 == 0 display(cw) end
+import Base: fill
+"""
+    fill!(cw::CrosswordPuzzle; seed=rand(Int), verbose=false)
+
+Fill the crossword puzzle `cw` using a backtracking algorithm with Minimum Remaining Values (MRV) heuristic.
+
+For now it only uses the simple fitting method ([`compute_options_simple`](@ref)) to compute candidate words for each slot; more advanced methods (flexibility, splitting) will soon be added.
+
+# Examples
+```julia-repl
+julia> cw = example_crossword(type="partial")
+    1  2  3  4  5  6 
+  ┌──────────────────┐
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  ⋅  ■  A │
+3 │ T  ■  ⋅  ⋅  ⋅  R │
+4 │ E  V  E  R  ■  R │
+5 │ ■  I  E  ■  ■  O │
+6 │ ⋅  I  ⋅  ⋅  ⋅  W │
+  └──────────────────┘
+
+julia> fill!(cw, seed=80)
+true
+
+julia> cw
+    1  2  3  4  5  6 
+  ┌──────────────────┐
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  Y  ■  A │
+3 │ T  ■  P  E  E  R │
+4 │ E  V  E  R  ■  R │
+5 │ ■  I  E  ■  ■  O │
+6 │ P  I  L  L  O  W │
+  └──────────────────┘
+```
+"""
+function fill!(cw::CrosswordPuzzle; seed=rand(Int), verbose=false)
+    Random.seed!(seed)
+    return _fill!(cw; seed=seed, verbose=verbose)
+end
+
+function _fill!(cw::CrosswordPuzzle; seed=rand(Int), verbose=false)
     if verbose print("Completeness [%]: $(round(100*sum(cw.grid .!= EMPTY_CELL) / prod(size(cw)),digits=2))\r") end
-    if iteration==0
-        Random.seed!(seed)
-        # rng = MersenneTwister(seed)
-        # @info "Starting fill! with seed $seed"
-    end
-    if iteration > 600
-        # println("Exiting for max iterations exceeded")
-        @warn "Maximum iterations reached, aborting..."
-        return false
-    end
     # Base case: crossword is complete
     if is_full(cw)
-        # println("Exiting for full crossword")
         return true
     end
     
@@ -317,12 +497,13 @@ function fill!(cw::CrosswordPuzzle; seed=rand(Int), iteration=0, verbose=false)
         if n_options == 0
             # println("Dead end at slot $s")
             return false
-            # maybe add something here; user can know a "ner" word (not in the dictionary) to place
+            # maybe add something here; user can know a "new" word (not in the dictionary) to place
         end
         if n_options < min_n_options
             most_constrained_slot_idx = i
             min_n_options = n_options
-            min_candidates = shuffle(candidates[s.length])
+            min_candidates = shuffle(candidates)
+            # min_candidates = shuffle(candidates[s.length])
             # min_candidates = candidates[s.length]
         end
     end
@@ -333,8 +514,8 @@ function fill!(cw::CrosswordPuzzle; seed=rand(Int), iteration=0, verbose=false)
     for word in min_candidates[1:min(length(min_candidates), 30)]
     # for word in min_candidates
         if place_word!(cw, word, slot.row, slot.col, slot.direction)
-            @info "trying word '$word' at slot $slot"
-            if fill!(cw, iteration=iteration+1, verbose=verbose)
+            # @info "trying word '$word' at slot $slot"
+            if _fill!(cw, verbose=verbose)
                 return true # SUCCESS propagates upward
             end
             remove_word!(cw, word) # backtrack
@@ -345,6 +526,15 @@ function fill!(cw::CrosswordPuzzle; seed=rand(Int), iteration=0, verbose=false)
     return false
 end
 
+cw = example_crossword(type="partial")
+fill!(cw, seed=80)
+cw
+
+# with_logger(NullLogger()) do
+    # fill!(cw, seed=80)
+    # display(cw)
+# end
+# clear!(cw, deep=false)
 
 # cw = patterned_crossword(6,8)
 # cw = patterned_crossword(8,10, max_density = 0.2)

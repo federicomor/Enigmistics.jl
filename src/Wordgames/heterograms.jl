@@ -51,7 +51,7 @@ Return a vector of matches in the form `(matching_range, matching_string)`.
 See also [`is_heterogram`](@ref).
 
 # Examples
-```jldoctest
+```julia-repl
 julia> text = clean_read("../texts/ulyss.txt", newline_replace="/");
 
 julia> scan_for_heterograms(text, min_length_letters=15)

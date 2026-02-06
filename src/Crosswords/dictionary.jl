@@ -15,8 +15,8 @@ function setup_dictionary(language="en")
     return words
 end
 
-words = setup_dictionary("it")
-# words = setup_dictionary("en")
+# words = setup_dictionary("it")
+words = setup_dictionary("en")
 
 function fitting_words(pattern::Regex, min_len::Int, max_len::Int)
     results = Dict{Int,Vector{String}}()

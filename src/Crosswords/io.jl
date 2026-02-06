@@ -155,28 +155,34 @@ julia> cw = load_crossword("ex2.txt"); show_crossword(cw)
     1  2  3  4  5  6 
   ┌──────────────────┐
 1 │ G  O  L  D  E  N │
-2 │ A  N  ■  O  ⋅  ⋅ │
-3 │ T  ■  ⋅  O  ⋅  ⋅ │
+2 │ A  N  ■  O  ■  ⋅ │
+3 │ T  ■  S  O  U  R │
 4 │ E  V  E  R  ■  ⋅ │
-5 │ ■  ⋅  ⋅  ■  ⋅  ⋅ │
-6 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+5 │ ■  I  E  ■  S  ⋅ │
+6 │ ⋅  I  N  ⋅  O  ⋅ │
   └──────────────────┘
 
 Horizontal:
  - 'GOLDEN' at (1, 1)
  - 'AN' at (2, 1)
+ - 'SOUR' at (3, 3)
  - 'EVER' at (4, 1)
+ - 'IE' at (5, 2)
 Vertical:
  - 'GATE' at (1, 1)
  - 'ON' at (1, 2)
+ - 'VII' at (4, 2)
+ - 'SEEN' at (3, 3)
  - 'DOOR' at (1, 4)
+ - 'SO' at (5, 5)
 
 Black cells:
- - at (4, 5) was automatically derived (count=1.0)
- - at (3, 2) was automatically derived (count=1.0)
- - at (5, 1) was automatically derived (count=1.0)
- - at (2, 3) was automatically derived (count=1.0)
- - at (5, 4) was automatically derived (count=1.0)
+ - at (3, 2) was automatically derived (count=3.0)
+ - at (4, 5) was automatically derived (count=2.0)
+ - at (2, 5) was manually placed (count=Inf)
+ - at (5, 1) was automatically derived (count=2.0)
+ - at (2, 3) was automatically derived (count=2.0)
+ - at (5, 4) was automatically derived (count=2.0)
 ```
 """
 function load_crossword(path::String)
@@ -197,6 +203,8 @@ function load_crossword(path::String)
 end
 
 # pwd()
+# cw = load_crossword("src/Crosswords/ex2.txt"); show_crossword(cw)
+
 # path="src/Crosswords/ex_eng.txt"
 # path="ex_ita.txt"
 # cw = load_crossword(path)

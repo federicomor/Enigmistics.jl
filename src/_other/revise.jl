@@ -1,6 +1,6 @@
 using Pkg
 Pkg.activate(".")
-using ProgressMeter, Logging
+using ProgressMeter, Logging, Random
 # cd("src/")
 
 include("../Wordgames/_constants.jl")

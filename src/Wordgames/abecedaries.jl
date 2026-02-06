@@ -76,8 +76,8 @@ Return a vector of matches in the form `(matching_range, matching_string)`.
 See also [`is_abecedary`](@ref).
 
 # Examples
-```jldoctest
-julia> text = clean_read("texts/paradise_lost.txt", newline_replace="/");
+```julia-repl
+julia> text = clean_read("../texts/paradise_lost.txt", newline_replace="/");
 
 julia> scan_for_abecedaries(text, min_length_words=4, max_length_words=5, language="en")
 3-element Vector{Any}:
@@ -85,17 +85,17 @@ julia> scan_for_abecedaries(text, min_length_words=4, max_length_words=5, langua
  (368827:368846, "raging Sea / Tost up")
  (405485:405502, "and both confess'd")
 
-julia> text = clean_read("texts/divina_commedia.txt", newline_replace="/");
+julia> text = clean_read("../texts/divina_commedia.txt", newline_replace="/");
 
 julia> scan_for_abecedaries(text, min_length_words=4, max_length_words=5, language="it")
 7-element Vector{Any}:
- (41947:41969, "per questo regno. / Sol")
- (251201:251214, "che dire e far")
- (286372:286400, "crucifisso, dispettoso e fero")
- (456131:456152, "cera dedutta / e fosse")
- (463117:463142, "albor balenar Cristo. / Di")
- (498374:498404, "O predestinazion, quanto remota")
- (508390:508415, "con digiuno, / e Francesco")
+ (42388:42410, "per questo regno. / Sol")
+ (253993:254006, "che dire e far")
+ (289587:289615, "crucifisso, dispettoso e fero")
+ (461336:461357, "cera dedutta / e fosse")
+ (468425:468450, "albor balenar Cristo. / Di")
+ (504086:504116, "O predestinazion, quanto remota")
+ (514226:514251, "con digiuno, / e Francesco")
 ```
 """
 function scan_for_abecedaries(text::AbstractString; 

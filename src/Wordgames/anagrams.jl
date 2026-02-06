@@ -43,7 +43,10 @@ function are_anagrams(s1::AbstractString,s2::AbstractString; be_strict=true)
     end
     return true
 end
-function are_anagrams(s1::Vector{String},s2::Vector{String}; be_strict=false)
+function are_anagrams(s1::Vector{AbstractString},s2::Vector{AbstractString}; be_strict=false)
+    return are_anagrams(join(s1, " "),join(s2, " "), be_strict=be_strict)
+end
+function are_anagrams(s1::Vector{SubString{String}},s2::Vector{SubString{String}}; be_strict=false)
     return are_anagrams(join(s1, " "),join(s2, " "), be_strict=be_strict)
 end
 
@@ -72,25 +75,25 @@ Return a vector of matches in the form `(range1, words1, range2, words2)`.
 See also [`are_anagrams`](@ref).
 
 # Examples
-```jldoctest-
+```julia-repl
 julia> text = "Last night I saw a gentleman; he was a really elegant man.";
 
 julia> matches = scan_for_anagrams(text, min_length_letters=1, max_length_letters=14, max_distance_words=10, be_strict=false)
 4-element Vector{Any}:
- (14:16, ["saw"], 34:36, ["was"])
- (14:18, ["saw", "a"], 34:38, ["was", "a"])
- (18:18, ["a"], 38:38, ["a"])
- (18:28, ["a", "gentleman"], 47:57, ["elegant", "man"])
+ (14:16, SubString{String}["saw"], 34:36, SubString{String}["was"])
+ (14:18, SubString{String}["saw", "a"], 34:38, SubString{String}["was", "a"])
+ (18:18, SubString{String}["a"], 38:38, SubString{String}["a"])
+ (18:28, SubString{String}["a", "gentleman"], 47:57, SubString{String}["elegant", "man"])
 
 julia> matches = scan_for_anagrams(text, min_length_letters=1, max_length_letters=14, max_distance_words=10, be_strict=true)
 3-element Vector{Any}:
- (14:16, ["saw"], 34:36, ["was"])
- (14:18, ["saw", "a"], 34:38, ["was", "a"])
- (18:28, ["a", "gentleman"], 47:57, ["elegant", "man"])
+ (14:16, SubString{String}["saw"], 34:36, SubString{String}["was"])
+ (14:18, SubString{String}["saw", "a"], 34:38, SubString{String}["was", "a"])
+ (18:28, SubString{String}["a", "gentleman"], 47:57, SubString{String}["elegant", "man"])
 
 julia> matches = scan_for_anagrams(text, min_length_letters=5, max_length_letters=14, max_distance_words=10)
 1-element Vector{Any}:
- (18:28, ["a", "gentleman"], 47:57, ["elegant", "man"])
+ (18:28, SubString{String}["a", "gentleman"], 47:57, SubString{String}["elegant", "man"])
 ```
 """
 function scan_for_anagrams(text::String;

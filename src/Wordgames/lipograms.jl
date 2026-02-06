@@ -17,8 +17,9 @@ julia> is_lipogram("If youth, throughout all history, had had a champion to stan
        out its purport", "e", verbose=true)
 true
 
-julia> is_lipogram("The quick brown fox","abc",verbose=true)
+julia> is_lipogram("The quick brown fox","abc",verbose=true) # found letters will be highlighted in bold magenta
 [ Info: Letter(s) present from wrt: Set(['c', 'b'])
+the quick brown fox
 false
 ```
 """
@@ -61,7 +62,7 @@ Return a vector of matches in the form `(matching_range, matching_string)`.
 See also [`is_lipogram`](@ref).
 
 # Examples
-```jldoctest
+```julia-repl
 julia> text = clean_read("../texts/all_shakespeare.txt", newline_replace="/");
 
 julia> scan_for_lipograms(text, "eta", min_length_letters=34) # E, T and A are the most common letters in english
