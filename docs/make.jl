@@ -22,6 +22,7 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/federicomor/Enigmistics.jl.git",
+    repo = "github.com/federicomor/Enigmistics.jl",
+    devbranch = "main",
     versions = nothing
 )
