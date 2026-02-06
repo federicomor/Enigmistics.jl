@@ -1,5 +1,9 @@
 # julia --color=yes --project make.jl
 push!(LOAD_PATH,"../src/")
+
+using Pkg
+pkg"add https://github.com/federicomor/Enigmistics.jl.git#main"
+
 using Enigmistics, Documenter
 
 DocMeta.setdocmeta!(Enigmistics, :DocTestSetup, :(using Enigmistics); recursive=true)
@@ -8,9 +12,8 @@ makedocs(
     sitename = "Enigmistics.jl",
     repo="https://github.com/federicomor/Enigmistics.jl",
     format = Documenter.HTML(
-        prettyurls=false,
-        repolink = "https://github.com/federicomor/Enigmistics",
-        edit_url = "https://github.com/federicomor/Enigmistics.jl/blob/main/docs/src/"
+        prettyurls=false
+        # repolink = "https://github.com/federicomor/Enigmistics",
         # repolink = "...", # if testing locally?
         # inventory_version = "0.1.0" # if testing locally?
     ),  
