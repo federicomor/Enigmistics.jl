@@ -12,8 +12,8 @@ makedocs(
     sitename = "Enigmistics.jl",
     repo="https://github.com/federicomor/Enigmistics.jl",
     format = Documenter.HTML(
-        prettyurls=false
-        # repolink = "https://github.com/federicomor/Enigmistics",
+        prettyurls=false,
+        repolink = "https://github.com/federicomor/Enigmistics.jl",
         # repolink = "...", # if testing locally?
         # inventory_version = "0.1.0" # if testing locally?
     ),  
