@@ -25,5 +25,7 @@ makedocs(
 
 deploydocs(
     repo = "github.com/federicomor/Enigmistics.jl",
-    devbranch = "main"
+    devbranch = "main",
+    branch = "gh-pages",
+    versions = nothing
 )
