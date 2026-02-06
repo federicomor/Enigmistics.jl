@@ -252,10 +252,11 @@ Black cells:
 function show_crossword(io::IO, cw::CrosswordPuzzle; words_details=true, black_cells_details=true, empty_placeholder='⋅')
 	# grid
 	show_grid(io, cw.grid, empty_placeholder = empty_placeholder, style="single")
+	println()
 	# words
 	if words_details
 		if any([w.direction == :horizontal for w in cw.words]) 
-			println(io, "\n\nHorizontal:")
+			println(io, "\nHorizontal:")
 			for w in filter(w -> w.direction == :horizontal, cw.words)
 				println(io, " - '", w.word, "' at (", w.row, ", ", w.col, ")")
 			end
@@ -693,6 +694,38 @@ can_place_word(cw::CrosswordPuzzle, cword::CrosswordWord) = can_place_word(cw, c
 	place_word!(cw::CrosswordPuzzle, cword::CrosswordWord)
 
 Place a word in the crossword puzzle at the given position and direction (accepted values are `:horizontal` and `:vertical`), checking if the given word can actually be placed. Returns true if the word was successfully placed, false otherwise.
+
+# Examples
+```julia-repl
+julia> cw = example_crossword(type="partial")
+    1  2  3  4  5  6 
+  ┌──────────────────┐
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  ⋅  ■  A │
+3 │ T  ■  ⋅  ⋅  ⋅  R │
+4 │ E  V  E  R  ■  R │
+5 │ ■  I  E  ■  ■  O │
+6 │ ⋅  I  ⋅  ⋅  ⋅  W │
+  └──────────────────┘
+
+julia> place_word!(cw, "DOG", 6, 1, :horizontal)
+┌ Warning: Cannot place word 'DOG' at (6, 1) horizontally due to conflict at cell (6, 2); found when checking the inner cells.
+false
+
+julia> place_word!(cw, "pillow", 6, 1, :horizontal)
+true
+
+julia> cw
+    1  2  3  4  5  6 
+  ┌──────────────────┐
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  ⋅  ■  A │
+3 │ T  ■  ⋅  ⋅  ⋅  R │
+4 │ E  V  E  R  ■  R │
+5 │ ■  I  E  ■  ■  O │
+6 │ P  I  L  L  O  W │
+  └──────────────────┘
+```
 """
 function place_word!(cw::CrosswordPuzzle, word::String, row::Int, col::Int, direction::Symbol)
 	word = uppercase(word)
@@ -711,6 +744,38 @@ place_word!(cw::CrosswordPuzzle, cword::CrosswordWord) = place_word!(cw::Crosswo
 	remove_word!(cw::CrosswordPuzzle, cword::CrosswordWord)
 
 Remove a word from the crossword puzzle. Returns true if the word was found and removed, false otherwise.
+
+# Examples
+```julia-repl
+julia> cw = example_crossword(type="partial")
+    1  2  3  4  5  6 
+  ┌──────────────────┐
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  ⋅  ■  A │
+3 │ T  ■  ⋅  ⋅  ⋅  R │
+4 │ E  V  E  R  ■  R │
+5 │ ■  I  E  ■  ■  O │
+6 │ ⋅  I  ⋅  ⋅  ⋅  W │
+  └──────────────────┘
+
+julia> remove_word!(cw, "large")
+┌ Warning: Word 'LARGE' not found in the crossword. No changes on the original grid.
+false
+
+julia> remove_word!(cw, "narrow")
+true
+
+julia> cw
+    1  2  3  4  5  6
+  ┌──────────────────┐
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  ⋅  ■  ⋅ │
+3 │ T  ■  ⋅  ⋅  ⋅  ⋅ │
+4 │ E  V  E  R  ■  ⋅ │
+5 │ ■  I  E  ■  ■  ⋅ │
+6 │ ⋅  I  ⋅  ⋅  ⋅  ⋅ │
+  └──────────────────┘
+```
 """
 function remove_word!(cw::CrosswordPuzzle, word::String)
 	word = uppercase(word)
@@ -731,6 +796,38 @@ remove_word!(cw::CrosswordPuzzle, cword::CrosswordWord) =  remove_word!(cw,cword
 	place_black_cell!(cw::CrosswordPuzzle, row::Int, col::Int)
 
 Place a black cell in the crossword puzzle at the given position. Returns true if the black cell was successfully placed, false otherwise.
+
+# Examples
+```julia-repl
+julia> cw = example_crossword(type="partial")
+    1  2  3  4  5  6 
+  ┌──────────────────┐
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  ⋅  ■  A │
+3 │ T  ■  ⋅  ⋅  ⋅  R │
+4 │ E  V  E  R  ■  R │
+5 │ ■  I  E  ■  ■  O │
+6 │ ⋅  I  ⋅  ⋅  ⋅  W │
+  └──────────────────┘
+
+julia> place_black_cell!(cw, 6, 2)
+┌ Warning: Cannot place black cell at position (6, 2) since cell is not empty. No changes on the original grid.
+false
+
+julia> place_black_cell!(cw, 6, 4)
+true
+
+julia> cw
+    1  2  3  4  5  6
+  ┌──────────────────┐
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  ⋅  ■  A │
+3 │ T  ■  ⋅  ⋅  ⋅  R │
+4 │ E  V  E  R  ■  R │
+5 │ ■  I  E  ■  ■  O │
+6 │ ⋅  I  ⋅  ■  ⋅  W │
+  └──────────────────┘
+```
 """
 function place_black_cell!(cw::CrosswordPuzzle, row::Int, col::Int)
 	idx = (row, col)
@@ -753,6 +850,47 @@ end
 	remove_black_cell!(cw::CrosswordPuzzle, row::Int, col::Int)
 
 Remove a black cell from the crossword puzzle at the given position. Returns true if the black cell was successfully placed, false otherwise.
+
+# Examples
+```julia-repl
+julia> cw = example_crossword(type="partial"); show_crossword(cw, words_details=false)
+    1  2  3  4  5  6 
+  ┌──────────────────┐
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  ⋅  ■  A │
+3 │ T  ■  ⋅  ⋅  ⋅  R │
+4 │ E  V  E  R  ■  R │
+5 │ ■  I  E  ■  ■  O │
+6 │ ⋅  I  ⋅  ⋅  ⋅  W │
+  └──────────────────┘
+
+Black cells:
+ - at (5, 5) was manually placed (count=Inf)
+ - at (4, 5) was automatically derived (count=1.0)
+ - at (3, 2) was automatically derived (count=2.0)
+ - at (2, 5) was manually placed (count=Inf)
+ - at (5, 1) was automatically derived (count=2.0)
+ - at (2, 3) was automatically derived (count=1.0)
+ - at (5, 4) was automatically derived (count=1.0)
+
+julia> remove_black_cell!(cw, 3, 2)
+┌ Warning: Cannot remove automatically placed black cell at position (3, 2) since it's needed as a word delimiter. No changes on the original grid.
+false
+
+julia> remove_black_cell!(cw, 5, 5)
+true
+
+julia> cw
+    1  2  3  4  5  6
+  ┌──────────────────┐
+1 │ G  O  L  D  E  N │
+2 │ A  N  ■  ⋅  ■  A │
+3 │ T  ■  ⋅  ⋅  ⋅  R │
+4 │ E  V  E  R  ■  R │
+5 │ ■  I  E  ■  ⋅  O │
+6 │ ⋅  I  ⋅  ⋅  ⋅  W │
+  └──────────────────┘
+```
 """
 function remove_black_cell!(cw::CrosswordPuzzle, row::Int, col::Int)
 	idx = (row, col)
@@ -1235,6 +1373,7 @@ julia> cw = example_crossword(); show_crossword(cw, words_details=false)
 5 │ ■  I  E  ■  ■  O │
 6 │ W  I  N  D  O  W │
   └──────────────────┘
+
 Black cells:
  - at (5, 5) was manually placed (count=Inf)
  - at (3, 2) was automatically derived (count=3.0)
