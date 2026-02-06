@@ -9,7 +9,8 @@ makedocs(
     repo="https://github.com/federicomor/Enigmistics.jl",
     format = Documenter.HTML(
         prettyurls=false,
-        repolink = GitHub("federicomor", "Enigmistics.jl")
+        repolink = "https://github.com/federicomor/Enigmistics",
+        edit_url = "https://github.com/federicomor/Enigmistics.jl/blob/main/docs/src/"
         # repolink = "...", # if testing locally?
         # inventory_version = "0.1.0" # if testing locally?
     ),  
