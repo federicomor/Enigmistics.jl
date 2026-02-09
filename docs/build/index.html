@@ -28,12 +28,12 @@ Scanning for heterograms... 100%|███████████████�
  (369900:369917, &quot;scourg&#39;d with many)</code></pre><p>and so on.</p><h2 id="Crosswords-usecase"><a class="docs-heading-anchor" href="#Crosswords-usecase">Crosswords usecase</a><a id="Crosswords-usecase-1"></a><a class="docs-heading-anchor-permalink" href="#Crosswords-usecase" title="Permalink"></a></h2><p>Create some kind of crossword, e.g. from a striped pattern:</p><pre><code class="language-julia-repl hljs">julia&gt; cw = striped_pattern(6, 8, seed=-53, min_stripe_dist=5)
     1  2  3  4  5  6  7  8 
   ┌────────────────────────┐
-1 │ ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
-2 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
-3 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
-4 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
-5 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
-6 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
+1 │ ■  .  .  .  .  .  ■  . │
+2 │ .  .  .  .  .  ■  .  . │
+3 │ .  .  .  ■  .  .  .  . │
+4 │ .  .  .  .  ■  .  .  . │
+5 │ .  .  ■  .  .  .  .  . │
+6 │ .  ■  .  .  .  .  .  ■ │
   └────────────────────────┘</code></pre><p>maybe add some words of your choice:</p><pre><code class="language-julia-repl hljs">julia&gt; place_word!(cw, &quot;Julia&quot;, 1, 8, :vertical)
 true
 
@@ -41,14 +41,14 @@ julia&gt; place_word!(cw, &quot;Code&quot;, 4, 1, :horizontal)
 true
 
 julia&gt; cw
-    1  2  3  4  5  6  7  8 
+    1  2  3  4  5  6  7  8
   ┌────────────────────────┐
-1 │ ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  J │
-2 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  U │
-3 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  L │
-4 │ C  O  D  E  ■  ⋅  ⋅  I │
-5 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  A │
-6 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
+1 │ ■  .  .  .  .  .  ■  J │
+2 │ .  .  .  .  .  ■  .  U │
+3 │ .  .  .  ■  .  .  .  L │
+4 │ C  O  D  E  ■  .  .  I │
+5 │ .  .  ■  .  .  .  .  A │
+6 │ .  ■  .  .  .  .  .  ■ │
   └────────────────────────┘</code></pre><p>Possibly save it to a file, so that if you want to fill it in automatically you have a &quot;checkpoint&quot; from which you can try different seeds for the words filling algorithm:</p><pre><code class="language-julia-repl hljs">julia&gt; save_crossword(cw, &quot;ex_docs.txt&quot;)</code></pre><p>and finally fill it automatically:</p><pre><code class="language-julia-repl hljs">julia&gt; fill!(cw, seed=-343); cw
     1  2  3  4  5  6  7  8 
   ┌────────────────────────┐
@@ -58,4 +58,4 @@ julia&gt; cw
 4 │ C  O  D  E  ■  V  A  I │
 5 │ E  N  ■  R  H  I  N  A │
 6 │ R  ■  T  E  I  N  D  ■ │
-  └────────────────────────┘</code></pre><p>Smarter automatic algorithms (which e.g. can choose to place some useful black cells or to enlarge the grid) will soon be implemented, as well as semi-automatic ones where the user can choose which word to place among the possible ones or which action to take (placing a black cell, enlarging the grid, maybe removing a word, etc) at each step of the algorithm.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="wordgames/">Wordgames »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Monday 9 February 2026 14:42">Monday 9 February 2026</span>. Using Julia version 1.11.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  └────────────────────────┘</code></pre><p>Smarter automatic algorithms (which e.g. can choose to place some useful black cells or to enlarge the grid) will soon be implemented, as well as semi-automatic ones where the user can choose which word to place among the possible ones or which action to take (placing a black cell, enlarging the grid, maybe removing a word, etc) at each step of the algorithm.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="wordgames/">Wordgames »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Monday 9 February 2026 15:12">Monday 9 February 2026</span>. Using Julia version 1.11.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

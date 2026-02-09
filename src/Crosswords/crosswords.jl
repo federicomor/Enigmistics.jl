@@ -275,7 +275,7 @@ function show_crossword(io::IO, cw::CrosswordPuzzle; words_details=true, black_c
 		end
 	end
 end
-show_crossword(cw::CrosswordPuzzle; words_details=true, black_cells_details=true, empty_placeholder='⋅') = show_crossword(stdout, cw; words_details=words_details, black_cells_details=black_cells_details, empty_placeholder=empty_placeholder)
+show_crossword(cw::CrosswordPuzzle; words_details=true, black_cells_details=true) = show_crossword(stdout, cw; words_details=words_details, black_cells_details=black_cells_details)
 
 """
 	update_crossword!(cw::CrosswordPuzzle)

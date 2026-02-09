@@ -1,6 +1,8 @@
 # julia --color=yes --project make.jl
 push!(LOAD_PATH,"../src/")
-using Documenter, Enigmistics
+using Enigmistics, Documenter
+
+DocMeta.setdocmeta!(Enigmistics, :DocTestSetup, :(using Enigmistics); recursive=true)
 
 makedocs(
     sitename = "Enigmistics",
@@ -14,5 +16,6 @@ makedocs(
         "wordgames.md",
         "crosswords.md"
         ],
+    modules = [Enigmistics], doctest = true, checkdocs=:exports,
     remotes = nothing
 )
