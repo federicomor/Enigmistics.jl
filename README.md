@@ -13,13 +13,13 @@ Enigmistics.jl is a Julia package for exploring and analyzing language puzzles, 
 ## Wordgames usecase
 
 Suppose we are a fan John Milton's Paradise Lost and we would like to inspect it to find some interesting wordgames. We can start by loading the book through the `clean_read` function, which loads the text removing useless newlines or spaces which could reduce the clarity of the output from the wordgames scanning functions:
-```julia-repl 
+```julia 
 julia> text = clean_read("../Enigmistics/texts/paradise_lost.txt", newline_replace="/")
 "PARADISE LOST / BOOK I. / Of Mans First Disobedience, and the Fruit / Of that Forbidden Tree, whose mortal tast / Brought Death into the World, and all our woe, / With loss of EDEN, till one greater Man / Restore us, and regain the blissful Seat, / Sing Heav'nly Muse, that on the secret top / Of OREB, or of SINAI, didst inspire / That Shepherd, who first taught the chosen Seed, / In the Beginning how the Heav'ns and Earth / Rose out of CHAOS: Or if SION Hill / Delight thee more, and SILOA" ⋯ 474211 bytes ⋯ "iff as fast / To the subjected Plaine; then disappeer'd. / They looking back, all th' Eastern side beheld / Of Paradise, so late thir happie seat, / Wav'd over by that flaming Brand, the Gate / With dreadful Faces throng'd and fierie Armes: / Som natural tears they drop'd, but wip'd them soon; / The World was all before them, where to choose / Thir place of rest, and Providence thir guide: / They hand in hand with wandring steps and slow, / Through EDEN took thir solitarie way. / THE END."
 ``` 
 
 We can start by looking for pangrams, i.e. sequence of words which contain all the letters of the alphabet. We can do it by calling the `scan_for_pangrams` function, which takes as input the text to be scanned and some optional parameters to filter the output (e.g. maximum length in words, language, etc):
-```julia-repl
+```julia
 julia> scan_for_pangrams(text, max_length_letters=80, language="en")
 Scanning for pangrams... 100%|██████████████████████████████████████████████| Time: 0:00:00
 1-element Vector{Any}:
@@ -28,7 +28,7 @@ Scanning for pangrams... 100%|████████████████�
 
 It seems that there is only one "interesting" (in the sense of not being too long) pangram in the whole text. Nice.\
 In a similar fashion we can now look for other wordgames:
-```julia-repl
+```julia
 julia> scan_for_tautograms(text, min_length_words=5, max_length_words=20)
 6-element Vector{Any}:
  (20801:20830, "and ASCALON, / And ACCARON and")
@@ -39,7 +39,7 @@ julia> scan_for_tautograms(text, min_length_words=5, max_length_words=20)
  (456113:456141, "Through the twelve Tribes, to")
 ```
 
-```julia-repl
+```julia
 julia> scan_for_abecedaries(text, min_length_words=4, max_length_words=5, language="en")
 Scanning for abecedaries... 100%|███████████████████████████████████████████| Time: 0:00:00
 3-element Vector{Any}:
@@ -48,7 +48,7 @@ Scanning for abecedaries... 100%|███████████████�
  (405485:405502, "and both confess'd")
 ```
 
-```julia-repl
+```julia
 julia> scan_for_heterograms(text, min_length_letters=15)
 Scanning for heterograms... 100%|███████████████████████████████████████████| Time: 0:00:00
 8-element Vector{Any}:
@@ -67,7 +67,7 @@ and so on.
 ## Crosswords usecase
 
 Create some kind of crossword, e.g. from a striped pattern:
-```julia-repl
+```julia
 julia> cw = striped_pattern(6, 8, seed=-53, min_stripe_dist=5)
     1  2  3  4  5  6  7  8 
   ┌────────────────────────┐
@@ -81,7 +81,7 @@ julia> cw = striped_pattern(6, 8, seed=-53, min_stripe_dist=5)
 ```
 
 maybe add some words of your choice:
-```julia-repl
+```julia
 julia> place_word!(cw, "Julia", 1, 8, :vertical)
 true
 
@@ -101,12 +101,12 @@ julia> cw
 ```
 
 Possibly save it to a file, so that if you want to fill it in automatically you have a "checkpoint" from which you can try different seeds for the words filling algorithm:
-```julia-repl
+```julia
 julia> save_crossword(cw, "ex_docs.txt")
 ```
 
 and finally fill it automatically:
-```julia-repl
+```julia
 julia> fill!(cw, seed=-343); cw
     1  2  3  4  5  6  7  8 
   ┌────────────────────────┐
