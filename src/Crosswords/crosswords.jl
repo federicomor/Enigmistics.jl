@@ -91,7 +91,7 @@ end
 """
 	CrosswordPuzzle(rows::Int, cols::Int, words::Vector{CrosswordWord})
 	
-Construct a crossword with the given dimensions and words. Returns an error if words intersections are not compatible.
+Construct a crossword with the given dimensions and words. Return an error if words intersections are not compatible.
 
 # Examples
 ```julia-repl
@@ -135,7 +135,7 @@ end
 """
 	CrosswordPuzzle(words::Vector{CrosswordWord})
 	
-Construct a crossword with the given words (dimensions are inferred from words positions). Returns an error if words intersections are not compatible.
+Construct a crossword with the given words (dimensions are inferred from words positions). Return an error if words intersections are not compatible.
 
 # Examples
 ```julia-repl
@@ -195,10 +195,9 @@ end
 
 
 """
-	show_crossword(cw::CrosswordPuzzle; words_details=true, black_cells_details=true, empty_placeholder='⋅')
+	show_crossword(cw::CrosswordPuzzle; words_details=true, black_cells_details=true)
 
-Print the crossword grid, possibly along with the list of words and the black cells details if the corresponding parameters are set to `true`.
-The way empty cells are shown can be customized through the `empty_placeholder` parameter.
+Print the crossword grid, possibly along with the words details and black cells details.
 
 # Examples
 ```jldoctest
@@ -240,18 +239,18 @@ Vertical:
  - 'NARROW' at (1, 6)
 
 Black cells:
- - at (5, 5) was manually placed (count=Inf)
- - at (3, 2) was automatically derived (count=3.0)
- - at (4, 5) was automatically derived (count=1.0)
- - at (2, 5) was manually placed (count=Inf)
- - at (5, 1) was automatically derived (count=2.0)
- - at (2, 3) was automatically derived (count=2.0)
- - at (5, 4) was automatically derived (count=2.0)
+ - at (5, 5) was manually placed
+ - at (3, 2) was automatically derived (delimiting 3 words)
+ - at (4, 5) was automatically derived (delimiting 1 words)
+ - at (2, 5) was manually placed
+ - at (5, 1) was automatically derived (delimiting 2 words)
+ - at (2, 3) was automatically derived (delimiting 2 words)
+ - at (5, 4) was automatically derived (delimiting 2 words)
 ```
 """
-function show_crossword(io::IO, cw::CrosswordPuzzle; words_details=true, black_cells_details=true, empty_placeholder='⋅')
+function show_crossword(io::IO, cw::CrosswordPuzzle; words_details=true, black_cells_details=true)
 	# grid
-	show_grid(io, cw.grid, empty_placeholder = empty_placeholder, style="single")
+	show_grid(io, cw.grid, empty_placeholder = EMPTY_PLACEHOLDER, style="single")
 	println()
 	# words
 	if words_details
@@ -272,7 +271,7 @@ function show_crossword(io::IO, cw::CrosswordPuzzle; words_details=true, black_c
 	if black_cells_details && !isempty(cw.black_cells)
 		println(io, "\nBlack cells:")
 		for (pos,cell) in cw.black_cells
-			println(io, " - at $pos was $(cell.manual==true ? "manually placed" : "automatically derived") (count=$(cell.count))")
+			println(io, " - at $pos was $(cell.manual==true ? "manually placed" : "automatically derived (delimiting $(Int(cell.count)) words)")")
 		end
 	end
 end
@@ -451,7 +450,7 @@ end
 """
 	enlarge!(cw::CrosswordPuzzle, how::Symbol, times=1)
 
-Enlarge the crossword grid in the direction given by `how` (accepted values are :N, :S, :E, :O) by inserting `times` empty rows/columns appropriately.
+Enlarge the crossword grid in the direction given by `how` (accepted values are :N, :S, :E, :O) by appropriately inserting `times` empty rows/columns.
 
 # Examples
 ```jldoctest
@@ -515,22 +514,23 @@ end
 """
 	shrink!(cw::CrosswordPuzzle)
 	
-Reduce the crossword size to its minimal representation by removing useless rows/columns (i.e. the ones which only contain black or empty cells).
+Reduce the crossword size to its minimal representation by removing useless rows/columns.
 
 # Examples
 ```julia-repl
 julia> cw
-    1  2  3  4  5  6  7 
-  ┌─────────────────────┐
-1 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
-2 │ ⋅  ■  ■  ⋅  ■  ⋅  ■ │
-3 │ ■  G  O  L  D  E  N │
-4 │ ■  A  N  ■  O  ■  A │
-5 │ ⋅  T  ■  S  O  U  R │
-6 │ ■  E  V  E  R  ■  R │
-7 │ ⋅  ■  I  E  ■  ■  O │
-8 │ ■  W  I  N  D  O  W │
-  └─────────────────────┘
+    1  2  3  4  5  6  7  8  9
+  ┌───────────────────────────┐
+1 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+2 │ ⋅  ■  ■  ⋅  ■  ⋅  ■  ⋅  ⋅ │
+3 │ ■  G  O  L  D  E  N  ■  ⋅ │
+4 │ ■  A  N  ■  O  ■  A  ⋅  ⋅ │
+5 │ ⋅  T  ■  S  O  U  R  ■  ⋅ │
+6 │ ■  E  V  E  R  ■  R  ⋅  ⋅ │
+7 │ ⋅  ■  I  E  ■  ■  O  ⋅  ⋅ │
+8 │ ■  W  I  N  D  O  W  ■  ⋅ │
+9 │ ⋅  ⋅  ■  ■  ⋅  ⋅  ■  ⋅  ⋅ │
+  └───────────────────────────┘
 
 julia> shrink!(cw); cw
     1  2  3  4  5  6 
@@ -575,7 +575,8 @@ function shrink!(cw::CrosswordPuzzle)
 
     # If the grid is entirely empty, return a minimal grid
     if top > bottom || left > right
-        return CrosswordPuzzle(1, 1)
+        cw = CrosswordPuzzle(1, 1)
+		return true
     end
 	# @show new_nrows, new_ncols
 	new_grid = create_grid(new_nrows, new_ncols)
@@ -591,7 +592,9 @@ end
 	can_place_word(cw::CrosswordPuzzle, word::String, row, col, direction::Symbol)
 	can_place_word(cw::CrosswordPuzzle, cwword::CrosswordWord)
 
-Check if a word can be placed in the crossword puzzle at the given position and direction (accepted values are `:horizontal` and `:vertical`). Returns true if the word can be placed, false otherwise.
+Check if a word can be placed in the crossword puzzle `cw` at the given position and direction.
+	
+Return true if the word can be placed, false otherwise.
 
 # Examples
 ```julia-repl
@@ -693,7 +696,9 @@ can_place_word(cw::CrosswordPuzzle, cword::CrosswordWord) = can_place_word(cw, c
 	place_word!(cw::CrosswordPuzzle, word::String, row, col, direction::Symbol)
 	place_word!(cw::CrosswordPuzzle, cword::CrosswordWord)
 
-Place a word in the crossword puzzle at the given position and direction (accepted values are `:horizontal` and `:vertical`), checking if the given word can actually be placed. Returns true if the word was successfully placed, false otherwise.
+Place a word in the crossword puzzle `cw` at the given position and direction, also checking if it can actually be placed.
+
+Return true if the word was successfully placed, false otherwise.
 
 # Examples
 ```julia-repl
@@ -708,8 +713,8 @@ julia> cw = example_crossword(type="partial")
 6 │ ⋅  I  ⋅  ⋅  ⋅  W │
   └──────────────────┘
 
-julia> place_word!(cw, "DOG", 6, 1, :horizontal)
-┌ Warning: Cannot place word 'DOG' at (6, 1) horizontally due to conflict at cell (6, 2); found when checking the inner cells.
+julia> place_word!(cw, "cat", 6, 1, :horizontal)
+┌ Warning: Cannot place word 'CAT' at (6, 1) horizontally due to conflict at cell (6, 2); found when checking the inner cells.
 false
 
 julia> place_word!(cw, "pillow", 6, 1, :horizontal)
@@ -743,7 +748,9 @@ place_word!(cw::CrosswordPuzzle, cword::CrosswordWord) = place_word!(cw::Crosswo
 	remove_word!(cw::CrosswordPuzzle, word::String)
 	remove_word!(cw::CrosswordPuzzle, cword::CrosswordWord)
 
-Remove a word from the crossword puzzle. Returns true if the word was found and removed, false otherwise.
+Remove a word from the crossword puzzle `cw`.
+ 
+Return true if the word was found and removed, false otherwise.
 
 # Examples
 ```julia-repl
@@ -758,8 +765,8 @@ julia> cw = example_crossword(type="partial")
 6 │ ⋅  I  ⋅  ⋅  ⋅  W │
   └──────────────────┘
 
-julia> remove_word!(cw, "large")
-┌ Warning: Word 'LARGE' not found in the crossword. No changes on the original grid.
+julia> remove_word!(cw, "cat")
+┌ Warning: Word 'CAT' not found in the crossword. No changes on the original grid.
 false
 
 julia> remove_word!(cw, "narrow")
@@ -795,7 +802,9 @@ remove_word!(cw::CrosswordPuzzle, cword::CrosswordWord) =  remove_word!(cw,cword
 """
 	place_black_cell!(cw::CrosswordPuzzle, row::Int, col::Int)
 
-Place a black cell in the crossword puzzle at the given position. Returns true if the black cell was successfully placed, false otherwise.
+Place a black cell in the crossword puzzle `cw` at the given position. 
+
+Return true if the black cell was successfully placed, false otherwise.
 
 # Examples
 ```julia-repl
@@ -849,7 +858,9 @@ end
 """
 	remove_black_cell!(cw::CrosswordPuzzle, row::Int, col::Int)
 
-Remove a black cell from the crossword puzzle at the given position. Returns true if the black cell was successfully placed, false otherwise.
+Remove a black cell from the crossword puzzle `cw` at the given position.
+
+Return true if the black cell was successfully removed, false otherwise.
 
 # Examples
 ```julia-repl
@@ -865,13 +876,13 @@ julia> cw = example_crossword(type="partial"); show_crossword(cw, words_details=
   └──────────────────┘
 
 Black cells:
- - at (5, 5) was manually placed (count=Inf)
- - at (4, 5) was automatically derived (count=1.0)
- - at (3, 2) was automatically derived (count=2.0)
- - at (2, 5) was manually placed (count=Inf)
- - at (5, 1) was automatically derived (count=2.0)
- - at (2, 3) was automatically derived (count=1.0)
- - at (5, 4) was automatically derived (count=1.0)
+ - at (5, 5) was manually placed
+ - at (4, 5) was automatically derived (delimiting 1 words)
+ - at (3, 2) was automatically derived (delimiting 2 words)
+ - at (2, 5) was manually placed
+ - at (5, 1) was automatically derived (delimiting 2 words)
+ - at (2, 3) was automatically derived (delimiting 1 words)
+ - at (5, 4) was automatically derived (delimiting 1 words)
 
 julia> remove_black_cell!(cw, 3, 2)
 ┌ Warning: Cannot remove automatically placed black cell at position (3, 2) since it's needed as a word delimiter. No changes on the original grid.
@@ -993,75 +1004,75 @@ end
 
 """
 ```
-patterned_crossword(nrows, ncols; 
+random_pattern(nrows, ncols; 
 	max_density=0.18, symmetry=true, double_symmetry=true, 
 	seed=rand(Int))
 ```
 
-Generate a crossword puzzle with black cells placed according to a random pattern, which can be totally random, symmetric, or doubly symmetric/specular. 
+Generate a crossword puzzle with black cells placed according to a random pattern which can be totally random, symmetric, or doubly symmetric (i.e. specular). 
 
 # Arguments
-- `nrows`, `ncols`: dimensions of the crossword grid
-- `max_density`: maximum density of black cells (default: 0.18)
-- `symmetry`: whether to enforce symmetry (default: true)
-- `double_symmetry`: whether to enforce double symmetry/specularity (default: false)
-- `seed`: random seed for reproducibility (default: random)
+- `nrows::Int`, `ncols::Int`: grid dimensions
+- `max_density::Float=0.18`: maximum density of black cells
+- `symmetry::Bool=true`: whether to enforce symmetry
+- `double_symmetry::Bool=false`: whether to enforce double symmetry (i.e. specularity)
+- `seed::Int=rand(Int)`: random seed for reproducibility
 
 # Examples
 ```julia-repl
-julia> patterned_crossword(12, 20, symmetry=false, seed=123)
+julia> random_pattern(12, 20, symmetry=false, seed=1)
      1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
    ┌────────────────────────────────────────────────────────────┐
- 1 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
- 2 │ ⋅  ■  ⋅  ■  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
- 3 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
- 4 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ■ │
- 5 │ ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅ │
- 6 │ ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅ │
- 7 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
- 8 │ ⋅  ■  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
- 9 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ■  ■  ⋅ │
-10 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
-11 │ ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅ │
-12 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 1 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ■ │
+ 2 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 3 │ ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 4 │ ■  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅ │
+ 5 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅ │
+ 6 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+ 7 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+ 8 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+ 9 │ ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+10 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ■  ⋅  ⋅  ■  ⋅ │
+11 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ■  ⋅  ⋅  ■ │
+12 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
    └────────────────────────────────────────────────────────────┘
 
-julia> patterned_crossword(12, 20, symmetry=true, seed=456)
+julia> random_pattern(12, 20, symmetry=true, seed=1)
      1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
    ┌────────────────────────────────────────────────────────────┐
- 1 │ ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅ │
- 2 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅ │
- 3 │ ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
- 4 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
- 5 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅ │
- 6 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
- 7 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
- 8 │ ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
- 9 │ ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
-10 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
-11 │ ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
-12 │ ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■ │
+ 1 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
+ 2 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+ 3 │ ■  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 4 │ ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+ 5 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅ │
+ 6 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+ 7 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
+ 8 │ ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 9 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■ │
+10 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ■ │
+11 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
+12 │ ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
    └────────────────────────────────────────────────────────────┘
 
-julia> patterned_crossword(12, 20, symmetry=true, double_symmetry=true, seed=789)
-     1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
+julia> random_pattern(12, 20, symmetry=true, double_symmetry=true, seed=1)
+     1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
    ┌────────────────────────────────────────────────────────────┐
- 1 │ ■  ⋅  ■  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ■  ⋅  ■ │
- 2 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
- 3 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
- 4 │ ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅ │
- 5 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
- 6 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
- 7 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
- 8 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
- 9 │ ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ⋅  ⋅  ⋅  ■  ⋅ │
-10 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
-11 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
-12 │ ■  ⋅  ■  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ■  ⋅  ■ │
+ 1 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 2 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+ 3 │ ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■ │
+ 4 │ ■  ⋅  ■  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■  ■  ⋅  ■ │
+ 5 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 6 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+ 7 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ■  ■  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+ 8 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 9 │ ■  ⋅  ■  ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■  ■  ⋅  ■ │
+10 │ ■  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ■ │
+11 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+12 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
    └────────────────────────────────────────────────────────────┘
 ```
 """
-function patterned_crossword(nrows::Int, ncols::Int; max_density::Real = 0.18, symmetry::Bool = true, 
+function random_pattern(nrows::Int, ncols::Int; max_density::Real = 0.18, symmetry::Bool = true, 
 							double_symmetry::Bool = false, seed::Int=rand(Int))
 	@info "Using seed" seed
 	Random.seed!(seed)
@@ -1114,87 +1125,87 @@ end
 
 # using Logging
 # with_logger(NullLogger()) do
-# patterned_crossword(12, 20, symmetry=false, seed=123)
-# patterned_crossword(12, 20, symmetry=true, seed=456)
-# patterned_crossword(12, 20, symmetry=true, double_symmetry=true, seed=789)
+# random_pattern(12, 20, symmetry=false, seed=123)
+# random_pattern(12, 20, symmetry=true, seed=456)
+# random_pattern(12, 20, symmetry=true, double_symmetry=true, seed=789)
 # end
 
 
 """
 ```
-striped_crossword(nrows, ncols; 
+striped_pattern(nrows, ncols; 
 	max_density = 0.18, 
 	min_stripe_dist = 4, keep_stripe_prob = 0.9,
 	symmetry = true, double_symmetry = false, 
 	seed=rand(Int))
 ```
 
-Generate a crossword puzzle with black cells placed according to a striped pattern, which can be totally random, symmetric, or doubly symmetric/specular. 
+Generate a crossword puzzle with black cells placed according to a striped pattern which can be random, symmetric, or doubly symmetric (i.e. specular). 
 
 # Arguments
-- `nrows`, `ncols`: dimensions of the crossword grid
-- `max_density`: maximum density of black cells (default: 0.18)
-- `min_stripe_dist`: minimum distance allowed between stripes (default: 4)
-- `keep_stripe_prob`: probability of continuing a stripe (default: 0.8)
-- `symmetry`: whether to enforce symmetry (default: true)
-- `double_symmetry`: whether to enforce double symmetry/specularity (default: false)
-- `seed`: random seed for reproducibility (default: random)
+- `nrows::Int`, `ncols::Int`: grid dimensions
+- `max_density::Float=0.18`: maximum density of black cells
+- `min_stripe_dist::Int=4`: minimum distance allowed between stripes
+- `keep_stripe_prob::Float=0.8`: probability of continuing a stripe
+- `symmetry::Bool=true`: whether to enforce symmetry
+- `double_symmetry::Bool=false`: whether to enforce double symmetry (i.e. specularity)
+- `seed::Int=rand(Int)`: random seed for reproducibility
 
 # Examples
 ```julia-repl
-julia> striped_crossword(12, 20, symmetry=false, seed=123)
-     1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
-   ┌────────────────────────────────────────────────────────────┐
- 1 │ ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
- 2 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
- 3 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
- 4 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
- 5 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
- 6 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
- 7 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
- 8 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
- 9 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
-10 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
-11 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
-12 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
-   └────────────────────────────────────────────────────────────┘
-
-julia> striped_crossword(12, 20, symmetry=true, seed=456)
-     1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
-   ┌────────────────────────────────────────────────────────────┐
- 1 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
- 2 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
- 3 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
- 4 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
- 5 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
- 6 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
- 7 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
- 8 │ ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
- 9 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
-10 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
-11 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
-12 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
-   └────────────────────────────────────────────────────────────┘
-
-julia> striped_crossword(12, 20, symmetry=true, double_symmetry=true, seed=789)
+julia> striped_pattern(12, 20, symmetry=false, seed=1)
      1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
    ┌────────────────────────────────────────────────────────────┐
- 1 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
- 2 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
- 3 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+ 1 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+ 2 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
+ 3 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+ 4 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+ 5 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 6 │ ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 7 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 8 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+ 9 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
+10 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+11 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
+12 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+   └────────────────────────────────────────────────────────────┘
+
+julia> striped_pattern(12, 20, symmetry=true, seed=1)
+     1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
+   ┌────────────────────────────────────────────────────────────┐
+ 1 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+ 2 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
+ 3 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+ 4 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+ 5 │ ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 6 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+ 7 │ ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+ 8 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
+ 9 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
+10 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅ │
+11 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
+12 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
+   └────────────────────────────────────────────────────────────┘
+
+julia>  striped_pattern(12, 20, symmetry=true, double_symmetry=true, seed=1)
+     1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
+   ┌────────────────────────────────────────────────────────────┐
+ 1 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+ 2 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
+ 3 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
  4 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
  5 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
- 6 │ ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
- 7 │ ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■ │
+ 6 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+ 7 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
  8 │ ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
  9 │ ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅ │
-10 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
-11 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
-12 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
+10 │ ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅ │
+11 │ ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅ │
+12 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │
    └────────────────────────────────────────────────────────────┘
 ```
 """
-function striped_crossword(nrows::Int, ncols::Int; max_density::Real = 0.18, 
+function striped_pattern(nrows::Int, ncols::Int; max_density::Real = 0.18, 
 						   min_stripe_dist::Int = 4, keep_stripe_prob::Real = 0.8,
 						   symmetry::Bool = true, double_symmetry::Bool = false, seed::Int=rand(Int))
 	@info "Using seed" seed
@@ -1280,11 +1291,11 @@ function striped_crossword(nrows::Int, ncols::Int; max_density::Real = 0.18,
 	return cw
 end
 
-# striped_crossword(12,20, symmetry=false, seed=123)
-# striped_crossword(12,20, symmetry=true, seed=456)
-# striped_crossword(12,20, symmetry=true, double_symmetry=true, seed=789)
+# striped_pattern(12,20, symmetry=false, seed=123)
+# striped_pattern(12,20, symmetry=true, seed=456)
+# striped_pattern(12,20, symmetry=true, double_symmetry=true, seed=789)
 	
-# function patterned_crossword_gen(nrows::Int, ncols::Int; max_density::Real = 0.18, 
+# function random_pattern_gen(nrows::Int, ncols::Int; max_density::Real = 0.18, 
 # 							stripes_prob::Real=0.7, change_dir_prob::Real=0.3,
 # 							symmetry::Bool = true, double_symmetry::Bool = false, seed::Int=rand(Int))
 # 	@info "Using seed" seed
@@ -1349,7 +1360,7 @@ end
 # 	if iterations >= 1000 @error "Max iterations reached (very strange?)." end
 # 	return cw
 # end
-# patterned_crossword_gen(14,20, max_density=0.18, stripes_prob=0.6, change_dir_prob=0.6,
+# random_pattern_gen(14,20, max_density=0.18, stripes_prob=0.6, change_dir_prob=0.6,
 # 	# seed = 12
 # )
 
@@ -1375,13 +1386,13 @@ julia> cw = example_crossword(); show_crossword(cw, words_details=false)
   └──────────────────┘
 
 Black cells:
- - at (5, 5) was manually placed (count=Inf)
- - at (3, 2) was automatically derived (count=3.0)
- - at (4, 5) was automatically derived (count=1.0)
- - at (2, 5) was manually placed (count=Inf)
- - at (5, 1) was automatically derived (count=2.0)
- - at (2, 3) was automatically derived (count=2.0)
- - at (5, 4) was automatically derived (count=2.0)
+ - at (5, 5) was manually placed
+ - at (3, 2) was automatically derived (delimiting 3 words)
+ - at (4, 5) was automatically derived (delimiting 1 words)
+ - at (2, 5) was manually placed
+ - at (5, 1) was automatically derived (delimiting 2 words)
+ - at (2, 3) was automatically derived (delimiting 2 words)
+ - at (5, 4) was automatically derived (delimiting 2 words)
 
 julia> clear!(cw, deep=false)
     1  2  3  4  5  6 

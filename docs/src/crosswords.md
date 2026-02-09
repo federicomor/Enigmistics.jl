@@ -32,8 +32,8 @@ clear!
 
 ## Patterns
 ```@docs
-patterned_crossword
-striped_crossword
+random_pattern
+striped_pattern
 ```
 
 ## IO
@@ -51,5 +51,5 @@ compute_options_split
 compute_options_flexible
 ```
 ```@docs
-Enigmistics.fill!
+fill!(cw::CrosswordPuzzle; seed=rand(Int), verbose=false)
 ```

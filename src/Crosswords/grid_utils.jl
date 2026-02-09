@@ -2,6 +2,7 @@ using Random
 
 BLACK_CELL = '■'
 EMPTY_CELL = ' '
+EMPTY_PLACEHOLDER = '⋅'
 is_black(c) = c == BLACK_CELL
 is_empty(c) = c == EMPTY_CELL
 
@@ -25,7 +26,7 @@ function cpad(data, pad::Int)
 end
 
 
-function show_grid(io::IO, grid::Matrix{Char}; empty_placeholder = '⋅', style="single")
+function show_grid(io::IO, grid::Matrix{Char}; empty_placeholder = EMPTY_PLACEHOLDER, style="single")
     nrows, ncols = size(grid)
     h_pad = max(3,ndigits(maximum(size(grid)[2]))+1)
     left_pad = ndigits(maximum(size(grid)[1]))+1 # +1 for space character

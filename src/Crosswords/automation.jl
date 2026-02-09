@@ -5,12 +5,12 @@
 Structure for a crossword slot, i.e. a place where a word can be placed.
 
 # Fields
-- `row`, `col`: slot position
-- `direction`: slot direction, :horizontal or :vertical
-- `length`: slot length
-- `pattern`: slot pattern, describing letters or blank spaces in the slot cells (e.g. "C.T" or "..A..")
-- `flexible_start`: can this slot be potentially expanded at the start (i.e. is it at the border of the grid)?
-- `flexible_end`: can this slot be potentially expanded at the end (i.e. is it at the border of the grid)?
+- `row::Int`, `col::Int`: slot position
+- `direction::Symbol`: slot direction (`:horizontal` or `:vertical`)
+- `length::Int`: slot length
+- `pattern::String`: slot pattern, describing letters or blank spaces in its cells
+- `flexible_start::Bool`: can this slot be potentially expanded at the start (e.g. is it at the border of the grid)?
+- `flexible_end::Bool`: can this slot be potentially expanded at the end (e.g. is it at the border of the grid)?
 """
 mutable struct Slot
     row::Int
@@ -101,7 +101,7 @@ end
 """
     find_constrained_slots(cw::CrosswordPuzzle)
 
-Find all slots (horizontal and vertical) in the crossword puzzle `cw` that are constrained, i.e. that have at least one empty cell and length at least 2.
+Find all slots (horizontal and vertical) in the crossword puzzle `cw` that are constrained, i.e. that have at least one empty cell and length at least 2 characters.
 
 # Examples
 ```julia-repl
@@ -134,9 +134,9 @@ end
 """
     compute_options_simple(s::Slot)
 
-Compute the number of fitting words for a slot `s` considering only its given pattern.
+Compute the number of fitting words for a slot `s` considering its pattern and length.
 
-Returns a tuple `(n_options, candidates)`, where `n_options` is the number of fitting words and `candidates` is a vector containing the list of fitting words.
+Return a tuple `(n_options, candidates)`, where `n_options` is the number of fitting words and `candidates` is a vector containing the list of fitting words.
 
 # Examples
 ```julia-repl
@@ -157,7 +157,6 @@ Slot(6, 1, :horizontal, 6, ".I...W", true, true)
 julia> compute_options_simple(slots[2], verbose=true)
 - simple fitting, length: 6 => #options: 18
       some are ["billow", "dismaw", "disnew", "jigsaw", "killow", "kirmew", "mildew", "minnow", "pigmew", "pillow"]
-(18, ["billow", "dismaw", "disnew", "jigsaw", "killow", "kirmew", "mildew", "minnow", "pigmew", "pillow", "pitsaw", "rillow", "ripsaw", "siddow", "willow", "window", "winnow", "winrow"])
 ```
 """
 function compute_options_simple(s::Slot; verbose=false)
@@ -172,9 +171,9 @@ end
 """
     compute_options_split(s::Slot)
 
-Compute the number of fitting words for a slot `s` by simulating the placement of black cells at each internal position of the slot, i.e. possibly splitting it into two smaller slots.
+Compute the number of fitting words for a slot `s` by simulating the placement of black cells at each internal position of the slot, i.e. possibly splitting the original slot into two smaller slots.
 
-Returns a tuple `(n_options, candidates)`, where `n_options` is a dictionary mapping the internal position of the black cell to the number of fitting words, and `candidates` is a dictionary mapping that same key to a tuple of two lists of fitting words (left and right sub-slots).
+Return a tuple `(n_options, candidates)`, where `n_options` is a dictionary mapping the internal position of the black cell to the number of fitting words, and `candidates` is a dictionary mapping that same key to a tuple of two lists of fitting words (left and right sub-slots).
 
 # Examples
 ```julia-repl
@@ -203,7 +202,6 @@ julia> compute_options_split(slots[2], verbose=true)
       they are Right: ["aw", "ew", "fw", "hw", "iw", "kw", "mw", "ow", "sw", "xw"]
 - placing a black cell at (6, 5), pattern: .I../W => #options: 852
       some are ["aias", "aide", "aids", "aiel", "aile", "ails", "aims", "aine", "ains", "aint"]
-(Dict(5 => 852, 4 => 2120, 3 => 1060, 1 => 7), Dict(5 => [["aias", "aide", "aids", "aiel", "aile", "ails", "aims", "aine", "ains", "aint"  …  "zinc", "zing", "zink", "zion", "zipa", "zips", "zira", "ziti", "zits", "zizz"], [""]], 4 => [["aid", "aik", "ail", "aim", "ain", "air", "ais", "ait", "aix", "bib"  …  "wis", "wit", "wiz", "xii", "xis", "xiv", "xix", "zig", "zip", "zit"], ["aw", "ew", "fw", "hw", "iw", "kw", "mw", "ow", "sw", "xw"]], 3 => [["ai", "bi", "di", "fi", "gi", "hi", "ii", "yi", "ji", "ki", "li", "mi", "ni", "pi", "si", "ti", "ui", "vi", "wi", "xi"], ["alw", "baw", "bow", "caw", "ccw", "ckw", "cow", "csw", "daw", "dew"  …  "sew", "sow", "taw", "tew", "tow", "usw", "vaw", "vow", "waw", "wow"]], 1 => [[""], ["ignaw", "immew", "inbow", "indew", "indow", "inlaw", "inmew"]]))
 ```
 """
 function compute_options_split(s::Slot; verbose=false)
@@ -274,9 +272,9 @@ end
 """
     compute_options_flexible(s::Slot, k::Int)
 
-Compute the number of fitting words for a slot `s` considering its flexibility at the start and/or at the end, i.e. simulating the potential expansion in length described by `k` which could happen by enlarging the grid.
+Compute the number of fitting words for a slot `s` considering its flexibility at the start and/or at the end, i.e. simulating the potential expansion of `k` cells in length which could happen by enlarging the grid.
 
-Returns a tuple `(n_options, candidates)`, where `n_options` is a dictionary mapping the flexibility simulated (increment at the start and/or at the end) to the number of fitting words, and `candidates` is a dictionary mapping that same key to the list of fitting words.
+Return a tuple `(n_options, candidates)`, where `n_options` is a dictionary mapping the flexibility simulated (increment at the start and/or at the end) to the number of fitting words, and `candidates` is a dictionary mapping that same key to the list of fitting words.
 
 # Examples
 ```julia-repl
@@ -299,7 +297,6 @@ julia> compute_options_flexible(slots[2], 1, verbose=true)
       some are ["billowy", "billows", "disgown", "jigsawn", "jigsaws", "midtown", "mildewy", "mildews", "minnows", "pillowy"]
 - flexible start/end, increment: (1, 0) => pattern ..I...W, length: 7 => #options: 9
       they are ["pristaw", "rainbow", "thishow", "trishaw", "uniflow", "whincow", "whipsaw", "whitlow", "whittaw"]
-(Dict((0, 1) => 19, (1, 0) => 9), Dict((0, 1) => ["billowy", "billows", "disgown", "jigsawn", "jigsaws", "midtown", "mildewy", "mildews", "minnows", "pillowy", "pillows", "pitsaws", "ripsaws", "willawa", "willowy", "willows", "windowy", "windows", "winnows"], (1, 0) => ["pristaw", "rainbow", "thishow", "trishaw", "uniflow", "whincow", "whipsaw", "whitlow", "whittaw"]))
 
 julia> compute_options_flexible(slots[2], 2, verbose=true)
 - flexible start/end, increment: (0, 2) => pattern .I...W.., length: 8 => #options: 33
@@ -308,7 +305,6 @@ julia> compute_options_flexible(slots[2], 2, verbose=true)
       some are ["boildown", "chippewa", "gairfowl", "muirfowl", "rainbowy", "rainbows", "rainfowl", "thindown", "whipsawn", "whipsaws"] 
 - flexible start/end, increment: (2, 0) => pattern ...I...W, length: 8 => #options: 3
       they are ["embillow", "splitnew", "splitsaw"]
-(Dict((0, 2) => 33, (1, 1) => 11, (2, 0) => 3), Dict((0, 2) => ["bilgeway", "billywix", "billowed", "disbowel", "giveaway", "hideaway", "jigsawed", "midtowns", "mildewed", "mildewer"  …  "widthway", "williwau", "williwaw", "willywaw", "willowed", "willower", "windowed", "winnowed", "winnower", "wittawer"], (1, 1) => ["boildown", "chippewa", "gairfowl", "muirfowl", "rainbowy", "rainbows", "rainfowl", "thindown", "whipsawn", "whipsaws", "whitlows"], (2, 0) => ["embillow", "splitnew", "splitsaw"]))
 ```
 """
 function compute_options_flexible(s::Slot, increment::Int; verbose=false)
@@ -438,7 +434,7 @@ end
 # end
 # fill!(cw)
 
-import Base: fill
+import Base: fill!
 """
     fill!(cw::CrosswordPuzzle; seed=rand(Int), verbose=false)
 
@@ -526,9 +522,9 @@ function _fill!(cw::CrosswordPuzzle; seed=rand(Int), verbose=false)
     return false
 end
 
-cw = example_crossword(type="partial")
-fill!(cw, seed=80)
-cw
+# cw = example_crossword(type="partial")
+# fill!(cw, seed=80)
+# cw
 
 # with_logger(NullLogger()) do
     # fill!(cw, seed=80)
@@ -610,3 +606,17 @@ cw
 #     cw
 # end
 
+# cw = patterned_crossword(10, 8, symmetry=true, seed = rand(1:1_000))
+# cw = striped_crossword(8, 10, symmetry=true, seed = rand(1:1_000))
+# # cw = patterned_crossword(6, 6, symmetry=true, seed = rand(1:1_000))
+# cw = patterned_crossword(6, 6, symmetry=true, seed = 48)
+# cw = patterned_crossword(6, 8, symmetry=true, seed = 7)
+# place_word!(cw, "Julia", 3, 2, :horizontal); cw
+# seed = rand(1:1000); @info seed; fill!(cw,   seed = seed); cw
+
+
+# cw = striped_crossword(8, 10, symmetry=true, seed = 555)
+# place_word!(cw, "Julia", 4, 6, :horizontal); cw
+# # place_word!(cw, "Lang", 5, 1, :horizontal); cw
+# fill!(cw, seed = 1)
+# cw

@@ -18,5 +18,6 @@ include("../Crosswords/grid_utils.jl")
 include("../Crosswords/crosswords.jl")
 include("../Crosswords/io.jl")
 include("../Crosswords/dictionary.jl")
+include("../Crosswords/automation.jl")
 
 # include("Enigmistics.jl")
