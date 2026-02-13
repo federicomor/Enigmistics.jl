@@ -532,16 +532,16 @@ end
 # end
 # clear!(cw, deep=false)
 
-# cw = patterned_crossword(6,8)
-# cw = patterned_crossword(8,10, max_density = 0.2)
-# cw = patterned_crossword(10,14, symmetry=true)
-# cw = striped_crossword(10,14, min_stripe_dist = 4, keep_stripe_prob = 0.9)
+# cw = random_pattern(6,8)
+# cw = random_pattern(8,10, max_density = 0.2)
+# cw = random_pattern(10,14, symmetry=true)
+# cw = striped_pattern(10,14, min_stripe_dist = 4, keep_stripe_prob = 0.9)
 
 
 
 
 
-# cw = patterned_crossword(8,10)
+# cw = random_pattern(8,10)
 # @time with_logger(NullLogger()) do
 #     seed = rand(Int)
 #     # seed = 1666050086924584950
@@ -554,13 +554,13 @@ end
 
 
 
-# cw = striped_crossword(10,14, min_stripe_dist = 4, keep_stripe_prob = 0.9)
+# cw = striped_pattern(10,14, min_stripe_dist = 4, keep_stripe_prob = 0.9)
 # @time with_logger(NullLogger()) do
 #     fill!(cw, verbose=true); cw
 # end
 
 
-# cw = patterned_crossword(10,12, symmetry=true)
+# cw = random_pattern(10,12, symmetry=true)
 # @time with_logger(NullLogger()) do
 #     fill!(cw, verbose=true); cw
 # end
@@ -584,7 +584,7 @@ end
 
 
 
-# cw = striped_crossword(10,14, min_stripe_dist = 4, keep_stripe_prob = 0.8)
+# cw = striped_pattern(10,14, min_stripe_dist = 4, keep_stripe_prob = 0.8)
 # @time with_logger(NullLogger()) do
 #     seed = rand(Int)
 #     println("seed: $seed")
@@ -598,7 +598,7 @@ end
 
 
 
-# cw = patterned_crossword(9,12, symmetry=true)
+# cw = random_pattern(9,12, symmetry=true)
 # @time with_logger(NullLogger()) do
 #     seed = rand(Int)
 #     println("seed: $seed")
@@ -606,17 +606,92 @@ end
 #     cw
 # end
 
-# cw = patterned_crossword(10, 8, symmetry=true, seed = rand(1:1_000))
-# cw = striped_crossword(8, 10, symmetry=true, seed = rand(1:1_000))
-# # cw = patterned_crossword(6, 6, symmetry=true, seed = rand(1:1_000))
-# cw = patterned_crossword(6, 6, symmetry=true, seed = 48)
-# cw = patterned_crossword(6, 8, symmetry=true, seed = 7)
+# cw = random_pattern(10, 8, symmetry=true, seed = rand(1:1_000))
+# cw = striped_pattern(8, 10, symmetry=true, seed = rand(1:1_000))
+# # cw = random_pattern(6, 6, symmetry=true, seed = rand(1:1_000))
+# cw = random_pattern(6, 6, symmetry=true, seed = 48)
+# cw = random_pattern(6, 8, symmetry=true, seed = 7)
 # place_word!(cw, "Julia", 3, 2, :horizontal); cw
 # seed = rand(1:1000); @info seed; fill!(cw,   seed = seed); cw
 
 
-# cw = striped_crossword(8, 10, symmetry=true, seed = 555)
+# cw = striped_pattern(8, 10, symmetry=true, seed = 555)
 # place_word!(cw, "Julia", 4, 6, :horizontal); cw
 # # place_word!(cw, "Lang", 5, 1, :horizontal); cw
 # fill!(cw, seed = 1)
 # cw
+
+# function _fill_with_split!(cw::CrosswordPuzzle; verbose=false, split_probability=0.2)
+#     if verbose 
+#         percent = round(100 * sum(cw.grid .!= EMPTY_CELL) / prod(size(cw)), digits=2)
+#         print("Completeness [%]: $percent\r") 
+#     end
+
+#     if is_full(cw) return true end
+    
+#     slots = find_constrained_slots(cw)
+    
+#     # 1. Evaluate standard options (MRV)
+#     best_slot = nothing
+#     min_options = Inf
+#     standard_candidates = String[]
+
+#     for s in slots
+#         n, candidates = compute_options_simple(s)
+#         if n == 0
+#             # Check if we should try a split here immediately since simple failed
+#             n_split, _ = compute_options_split(s)
+#             if isempty(n_split) return false end # True dead end
+#         end
+        
+#         if n < min_options
+#             min_options = n
+#             best_slot = s
+#             standard_candidates = candidates
+#         end
+#     end
+
+#     # 2. Decision: Should we try to split this slot?
+#     # We split if: 1. Simple search failed OR 2. Random chance (exploration)
+#     n_splits, split_data = compute_options_split(best_slot)
+    
+#     if min_options == 0 || (!isempty(n_splits) && rand() < split_probability)
+#         # Sort split positions by those that offer the most word options
+#         sorted_split_indices = sort(collect(keys(n_splits)), by=k->n_splits[k], rev=true)
+#         @show best_slot
+#         for k in sorted_split_indices
+#             b_row, b_col = best_slot.row, best_slot.col # Helper to get grid coords from slot index
+            
+#             # Place Black Cell
+#             place_black_cell!(cw, b_row, b_col)
+            
+#             # Recursively continue
+#             # Note: After splitting, find_constrained_slots will naturally see 
+#             # the two new smaller slots in the next iteration.
+#             if _fill_with_split!(cw, verbose=verbose)
+#                 return true
+#             end
+
+#             # Backtrack: Remove Black Cell
+#             remove_black_cell!(cw, b_row, b_col)
+#         end
+#     end
+
+#     # 3. Standard Word Placement (The "classical" branch)
+#     # We limit candidates to avoid branching factor explosion
+#     for word in standard_candidates[1:min(length(standard_candidates), 30)]
+#         if place_word!(cw, word, best_slot.row, best_slot.col, best_slot.direction)
+#             if _fill_with_split!(cw, verbose=verbose)
+#                 return true
+#             end
+#             remove_word!(cw, word) # Backtrack
+#         end
+#     end
+
+#     return false
+# end
+# cw = example_crossword(type="partial")
+# clear!(cw, deep=false)
+# set_dictionary("it")
+# cw
+# _fill_with_split!(cw)
