@@ -8,13 +8,13 @@ Enigmistics.jl is a Julia package for exploring and analyzing language puzzles, 
 
 ## Wordgames usecase
 
-Suppose we are a fan John Milton's Paradise Lost and we would like to inspect it to find some interesting wordgames. We can start by loading the book through the `clean_read` function, which loads the text removing useless newlines or spaces which could reduce the clarity of the output from the wordgames scanning functions:
+Suppose we are a fan of John Milton's Paradise Lost poem and we would like to inspect it to find some interesting wordgames. We can start by loading the book through the `clean_read` function, which loads the text removing useless newlines or spaces which could reduce the clarity of the output from the wordgames scanning functions:
 ```julia-repl 
 julia> text = clean_read("../Enigmistics/texts/paradise_lost.txt", newline_replace="/")
 "PARADISE LOST / BOOK I. / Of Mans First Disobedience, and the Fruit / Of that Forbidden Tree, whose mortal tast / Brought Death into the World, and all our woe, / With loss of EDEN, till one greater Man / Restore us, and regain the blissful Seat, / Sing Heav'nly Muse, that on the secret top / Of OREB, or of SINAI, didst inspire / That Shepherd, who first taught the chosen Seed, / In the Beginning how the Heav'ns and Earth / Rose out of CHAOS: Or if SION Hill / Delight thee more, and SILOA" ⋯ 474211 bytes ⋯ "iff as fast / To the subjected Plaine; then disappeer'd. / They looking back, all th' Eastern side beheld / Of Paradise, so late thir happie seat, / Wav'd over by that flaming Brand, the Gate / With dreadful Faces throng'd and fierie Armes: / Som natural tears they drop'd, but wip'd them soon; / The World was all before them, where to choose / Thir place of rest, and Providence thir guide: / They hand in hand with wandring steps and slow, / Through EDEN took thir solitarie way. / THE END."
 ``` 
 
-We can start by looking for pangrams, i.e. sequence of words which contain all the letters of the alphabet. We can do it by calling the `scan_for_pangrams` function, which takes as input the text to be scanned and some optional parameters to filter the output (e.g. maximum length in words, language, etc):
+We can start by looking for pangrams, i.e. sequence of words which contain all the letters of the alphabet. We can do it by calling the `scan_for_pangrams` function, which takes as input the text to be scanned and some optional parameters to filter the output (e.g. maximum length in letters, language, etc):
 ```julia-repl
 julia> scan_for_pangrams(text, max_length_letters=80, language="en")
 Scanning for pangrams... 100%|██████████████████████████████████████████████| Time: 0:00:00
@@ -23,7 +23,9 @@ Scanning for pangrams... 100%|████████████████�
 ```
 
 It seems that there is only one "interesting" (in the sense of not being too long) pangram in the whole text. Nice.\
-In a similar fashion we can now look for other wordgames:
+In a similar fashion we can now look for other wordgames. For example: are there sequences of words 
+
+- which all start with the same letter?
 ```julia-repl
 julia> scan_for_tautograms(text, min_length_words=5, max_length_words=20)
 6-element Vector{Any}:
@@ -35,6 +37,7 @@ julia> scan_for_tautograms(text, min_length_words=5, max_length_words=20)
  (456113:456141, "Through the twelve Tribes, to")
 ```
 
+- where their initials are in alphabetical order?
 ```julia-repl
 julia> scan_for_abecedaries(text, min_length_words=4, max_length_words=5, language="en")
 Scanning for abecedaries... 100%|███████████████████████████████████████████| Time: 0:00:00
@@ -44,6 +47,7 @@ Scanning for abecedaries... 100%|███████████████�
  (405485:405502, "and both confess'd")
 ```
 
+- where all letters are different?
 ```julia-repl
 julia> scan_for_heterograms(text, min_length_letters=15)
 Scanning for heterograms... 100%|███████████████████████████████████████████| Time: 0:00:00
@@ -56,6 +60,21 @@ Scanning for heterograms... 100%|███████████████�
  (229224:229240, "and briefly touch")
  (277449:277465, "lead thy ofspring")
  (369900:369917, "scourg'd with many)
+```
+
+- where letters E and T do not appear?
+```julia-repl
+julia> scan_for_lipograms(text, "ET"; min_length_letters=34, max_length_letters=100)
+Scanning for lipograms... 100%|███████████████████████████████████████████| Time: 0:00:00        
+8-element Vector{Any}:
+ (65052:65094, "foul in many a scaly fould / Voluminous and")
+ (143410:143454, "by morrow dawning I shall know. / So promis'd")
+ (242542:242583, "Rowld inward, and a spacious Gap disclos'd")
+ (442481:442523, "by his command / Shall build a wondrous Ark")
+ (442481:442527, "by his command / Shall build a wondrous Ark, as")
+ (442484:442527, "his command / Shall build a wondrous Ark, as")
+ (451977:452024, "God, who call'd him, in a land unknown. / CANAAN")
+ (457966:458011, "From ABRAHAM, Son of ISAAC, and from him / His")
 ```
 
 and so on.

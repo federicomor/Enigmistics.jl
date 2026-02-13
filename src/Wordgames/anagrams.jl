@@ -21,28 +21,30 @@ true
 ```
 """
 function are_anagrams(s1::AbstractString,s2::AbstractString; be_strict=true)
+    s1_clean = strip_text(s1)
+    s2_clean = strip_text(s2)
+
     # collect cleaned letters form each string
-    s1_clean = normalize_accents.(lowercase.(filter(isletter,collect(s1))))
-    s2_clean = normalize_accents.(lowercase.(filter(isletter,collect(s2))))
-    length(s1_clean) != length(s2_clean) && return false
+    s1_letters = filter(isletter,collect(s1_clean))
+    s2_letters = filter(isletter,collect(s2_clean))
+    length(s1_letters) != length(s2_letters) && return false
 
     freq = Dict{Char, Int}()
-    for c in s1_clean
+    for c in s1_letters
         freq[c] = get(freq, c, 0) + 1
     end
-    for c in s2_clean
+    for c in s2_letters
         freq[c] = get(freq, c, 0) - 1
     end
     any(v != 0 for v in values(freq)) && return false
     if be_strict
         # we need to check that the two strings are not just a reordering of the same words
-        s1_cleaner = strip_text(s1)
-        s2_cleaner = strip_text(s2)
         # so we derive the words, sort them, and compare the result
-        return sort(split(s1_cleaner," ")) != sort(split(s2_cleaner," "))
+        return sort(split(s1_clean," ")) != sort(split(s2_clean," "))
     end
     return true
 end
+
 function are_anagrams(s1::Vector{AbstractString},s2::Vector{AbstractString}; be_strict=false)
     return are_anagrams(join(s1, " "),join(s2, " "), be_strict=be_strict)
 end
@@ -50,9 +52,15 @@ function are_anagrams(s1::Vector{SubString{String}},s2::Vector{SubString{String}
     return are_anagrams(join(s1, " "),join(s2, " "), be_strict=be_strict)
 end
 
-# @time are_anagrams(["The","Morse Code"],["Here","come","dots!"])
-# @time are_anagrams("The Morse Code","Here come dots!")
 
+# helper for the next function
+function get_signature(s_clean::AbstractString)
+    sig = Dict{Char, Int}()
+    for char in s_clean
+        sig[char] = get(sig, char, 0) + 1
+    end
+    return sig
+end
 """
 ```
 scan_for_anagrams(text::String; 
@@ -103,36 +111,57 @@ function scan_for_anagrams(text::String;
                             print_results=false, be_strict=true)
 
     # precompute words and positions
-    matches = collect(eachmatch(r"\p{L}+", text)) # separe words by runs of letters only
+    matches = collect(eachmatch(r"\p{L}+", text))
+    # words: original text; words_clean: used for strict comparison
     words = [m.match for m in matches]
+    words_clean = [normalize_accents(lowercase(m.match)) for m in matches] # Add accent removal here if needed
+
     starts = [m.offset for m in matches]
     ends = [m.offset + lastindex(m.match) - 1 for m in matches]
     
-    n = length(words)
+    # pre-calculate letter counts per word
+    word_lens = [length(w) for w in words_clean]
+
+    n = length(matches)
     results = []
     p = Progress(n, desc="Scanning for anagrams...")
 
     for i in 1:n
+        current_len1 = 0
         for j in i:n
-            pool1 = words[i:j]
-            len1 = sum(count_letters(w) for w in pool1)
-            if len1 > max_length_letters
-                break
-            end
-            if len1 >= min_length_letters
-                # look ahead for pool2
-                for k in (j+1):min(n, j+max_distance_words)
-                    for l in k:n
-                        pool2 = words[k:l]
-                        len2 = sum(count_letters(w) for w in pool2)
-                        if len2 > max_length_letters
-                            break
-                        end
-                        if len2 >= min_length_letters && len1==len2 && are_anagrams(pool1, pool2; be_strict=be_strict)
-                            # character spans from original text
-                            rng1 = starts[i]:ends[j]
-                            rng2 = starts[k]:ends[l]
-                            push!(results, (rng1, pool1, rng2, pool2))
+            current_len1 += word_lens[j]
+            
+            if current_len1 > max_length_letters; break; end
+            if current_len1 < min_length_letters; continue; end
+            
+            # Phrase 1 signature (calculated once per valid window)
+            phrase1_str = join(words_clean[i:j])
+            sig1 = get_signature(phrase1_str)
+            
+            # Look ahead for pool2
+            lookahead_limit = min(n, j + max_distance_words)
+            current_len2 = 0
+            
+            for k in (j+1):lookahead_limit
+                current_len2 = 0 # Reset for the start of l-loop
+                for l in k:n
+                    current_len2 = sum(word_lens[k:l])
+                    
+                    if current_len2 > max_length_letters; break; end
+                    
+                    if current_len1 == current_len2
+                        phrase2_str = join(words_clean[k:l])
+                        sig2 = get_signature(phrase2_str)
+                        
+                        if sig1 == sig2
+                            # STRICT CHECK: Ensure they aren't just the same words rearranged
+                            if be_strict
+                                if sort(words_clean[i:j]) == sort(words_clean[k:l])
+                                    continue # Skip if it's just a word permutation
+                                end
+                            end
+                            
+                            push!(results, (starts[i]:ends[j], words[i:j], starts[k]:ends[l], words[k:l]))
                         end
                     end
                 end
@@ -147,13 +176,8 @@ function scan_for_anagrams(text::String;
             println("(none)"); return results
         end
         for (idx, (rng1, phrase1, rng2, phrase2)) in enumerate(results)
-            println(lpad(idx,2), ") ($(count_letters(phrase1)) letters) ", rng1, ": ", join(phrase1," "), ", ", rng2, ": ", join(phrase2, " "))
+            println(lpad(idx,2), ") ($(count_letters(phrase1)) letters) ", rng1, ": \"", join(phrase1," "), "\", ", rng2, ": \"", join(phrase2, " "), "\"")
         end    
     end
-
     return results
 end
-
-# text = clean_read("texts/paradise_lost.txt", newline_replace="/"); text[1:100]
-# text = text[1:200_000]
-# @time scan_for_anagrams(text, min_length_letters=5, max_length_letters=14, max_distance_words=10, be_strict=true, print_results=true)

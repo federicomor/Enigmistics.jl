@@ -15,6 +15,8 @@ mutable struct CrosswordWord
 	col::Int
 	direction::Symbol # :vertical or :horizontal 
 end 
+# aliases for easier usage
+CW_DIRECTIONS = Dict(:h => :horizontal, :horizontal => :horizontal, :v => :vertical, :vertical => :vertical) 
 
 # some useful overloads
 function Base.uppercase(cw::CrosswordWord)
@@ -39,6 +41,9 @@ mutable struct CrosswordBlackCell
 	manual::Bool # was automatic based on surronding words or was manually set by user
 end
 
+# for keeping track of the words that were automatically created by each black cell (if any), 
+# and which therefore should be automatically removed as well if the black cell gets removed
+BLACK_CELLS_BINDINGS = Dict{Tuple{Int,Int}, Vector{String}}()
 
 """
 	CrosswordPuzzle
@@ -609,15 +614,19 @@ julia> cw = example_crossword(type="partial")
 6 │ ⋅  I  ⋅  ⋅  ⋅  W │
   └──────────────────┘
 
-julia> can_place_word(cw, "GEEKS", 3, 3, :vertical)
-┌ Warning: Word 'GEEKS' does not fit in the grid vertically at (3, 3).
+julia> can_place_word(cw, "PEARS", 3, 3, :h)
+┌ Warning: Word 'PEARS' does not fit in the grid horizontally at (3, 3).
 false
 
-julia> can_place_word(cw, "PEAR", 1, 4, :vertical)
-┌ Warning: Cannot place word 'PEAR' at (1, 4) vertically due to conflict at cell (1, 4); found when checking the inner cells.
+julia> can_place_word(cw, "BEAN", 3, 3, :h)
+┌ Warning: Cannot place word 'BEAN' at (3, 3) horizontally due to conflict at cell (3, 6); found when checking the inner cells.
 false
 
-julia> can_place_word(cw, "DEAR", 1, 4, :vertical)
+julia> can_place_word(cw, "TEA", 3, 3, :h)
+┌ Warning: Cannot place word 'TEA' at (3, 3) horizontally due to conflict at cell (3, 6); found when checking the border cells.
+false
+
+julia> can_place_word(cw, "DEAR", 1, 4, :v)
 true
 ```
 """
@@ -637,7 +646,7 @@ function can_place_word(cw::CrosswordPuzzle, word::String, row::Int, col::Int, d
 	end
 	lw = length(word)
 	nrows, ncols = size(cw.grid)
-	if direction == :horizontal
+	if CW_DIRECTIONS[direction] == :horizontal
 		if col+lw-1 > ncols
 			@warn "Word '$word' does not fit in the grid horizontally at ($row, $col)."
 			return false
@@ -660,7 +669,7 @@ function can_place_word(cw::CrosswordPuzzle, word::String, row::Int, col::Int, d
 			@warn "Cannot place word '$word' at ($row, $col) horizontally due to conflict at cell ($row, $(col+lw)); found when checking the border cells."
 			return false
 		end
-	elseif direction == :vertical
+	elseif CW_DIRECTIONS[direction] == :vertical
 		if row+lw-1 > nrows
 			@warn "Word '$word' does not fit in the grid vertically at ($row, $col)."
 			return false
@@ -713,11 +722,11 @@ julia> cw = example_crossword(type="partial")
 6 │ ⋅  I  ⋅  ⋅  ⋅  W │
   └──────────────────┘
 
-julia> place_word!(cw, "cat", 6, 1, :horizontal)
+julia> place_word!(cw, "cat", 6, 1, :h)
 ┌ Warning: Cannot place word 'CAT' at (6, 1) horizontally due to conflict at cell (6, 2); found when checking the inner cells.
 false
 
-julia> place_word!(cw, "pillow", 6, 1, :horizontal)
+julia> place_word!(cw, "pillow", 6, 1, :h)
 true
 
 julia> cw
@@ -734,8 +743,8 @@ julia> cw
 """
 function place_word!(cw::CrosswordPuzzle, word::String, row::Int, col::Int, direction::Symbol)
 	word = uppercase(word)
-	if can_place_word(cw, word, row, col, direction)
-		push!(cw.words, CrosswordWord(word, row, col, direction))
+	if can_place_word(cw, word, row, col, CW_DIRECTIONS[direction])
+		push!(cw.words, CrosswordWord(word, row, col, CW_DIRECTIONS[direction]))
 		update_crossword!(cw)
 		return true
 	else 
@@ -747,8 +756,10 @@ place_word!(cw::CrosswordPuzzle, cword::CrosswordWord) = place_word!(cw::Crosswo
 """
 	remove_word!(cw::CrosswordPuzzle, word::String)
 	remove_word!(cw::CrosswordPuzzle, cword::CrosswordWord)
+	remove_word!(cw::CrosswordPuzzle, words::Vector{String})
+	remove_word!(cw::CrosswordPuzzle, words::Vector{CrosswordWord})
 
-Remove a word from the crossword puzzle `cw`.
+Remove a word (or multiple words) from the crossword puzzle `cw`.
  
 Return true if the word was found and removed, false otherwise.
 
@@ -785,18 +796,27 @@ julia> cw
 ```
 """
 function remove_word!(cw::CrosswordPuzzle, word::String)
-	word = uppercase(word)
-	if !(word in [w.word for w in cw.words])
-		@warn "Word '$word' not found in the crossword. No changes on the original grid."
+	word_up = uppercase(word)	
+    idx = findfirst(w -> w.word == word_up, cw.words)
+    
+    if isnothing(idx)
+		@warn "Word '$word_up' not found in the crossword. No changes on the original grid."
 		return false
 	end
-	# @show cw.words
-	deleteat!(cw.words,findfirst(w->w.word==word,cw.words))
-	# @show cw.words
+	deleteat!(cw.words,idx)
 	update_crossword!(cw)
 	return true
 end
 remove_word!(cw::CrosswordPuzzle, cword::CrosswordWord) =  remove_word!(cw,cword.word)
+# for vectors:
+# remove_word!.(Ref(cw), ["golden", "narrow"])
+# or this:
+function remove_word!(cw::CrosswordPuzzle, words::Vector{T}) where T <: Union{String, CrosswordWord}
+    # We use map to apply the existing logic to every element in the vector
+    results = [remove_word!(cw, w) for w in words]
+    return results
+end
+
 
 
 """
@@ -849,11 +869,67 @@ function place_black_cell!(cw::CrosswordPuzzle, row::Int, col::Int)
 		@warn "Cannot place black cell at position $idx since cell is not empty. No changes on the original grid."
 		return false
 	end
-	cw.black_cells[idx] = CrosswordBlackCell(Inf64, true) # we manually placed it
+	cw.black_cells[idx] = CrosswordBlackCell(Inf64, true) # we manually place it
+	# a placed black cell may potentially create a word:
+	#     1  2  3  4  5  6 
+	#   ┌──────────────────┐
+	# 1 │ .  A  .  .  .  . │
+	# 2 │ ■  B  .  .  ■  . │
+	# 3 │ ■  A  .  .  A  . │
+	# 4 │ K  C  ■  .  B  . │
+	# 5 │ O  H  ■  .  ■  . │
+	# 6 │ .  I  .  .  .  . │
+	#   └──────────────────┘
+	# julia> place_black_cell!(cw, 6, 1)
+	#     1  2  3  4  5  6 
+	#   ┌──────────────────┐
+	# 1 │ .  A  .  .  .  . │
+	# 2 │ ■  B  .  .  ■  . │
+	# 3 │ ■  A  .  .  A  . │
+	# 4 │ K  C  ■  .  B  . │
+	# 5 │ O  H  ■  .  ■  . │
+	# 6 │ ■  I  .  .  .  . │
+	#   └──────────────────┘
+	# this placement creates word "KO" which then needs to be added
+	# ...unless it was already present in the list of words, in which case we interrupt the black cell placement
+	# e.g here
+	#     1  2  3  4  5  6 
+	#   ┌──────────────────┐
+	# 1 │ .  A  .  ■  K  O │
+	# 2 │ ■  B  .  .  ■  . │
+	# 3 │ ■  A  .  .  A  . │
+	# 4 │ K  C  ■  .  B  . │
+	# 5 │ O  H  ■  .  ■  . │
+	# 6 │ ■  I  .  .  .  . │
+	#   └──────────────────┘
+	theoretical_words = deduce_words(cw.grid) # function from Crosswords/io.jl
+	for th_w in theoretical_words
+		is_present = false
+		for cw_w in cw.words
+			if cw_w.word == th_w.word
+				if cw_w.row != th_w.row || cw_w.col != th_w.col || cw_w.direction != th_w.direction
+					@warn "The placement of the black cell at position $idx delimited a new word (\"$(th_w.word)\") which is already present in the crossword, so the black cell can't be placed as it would create a duplicate word. No changes on the original grid."
+					delete!(cw.black_cells, idx)
+					return false
+				else
+					is_present = true; break
+				end
+			end
+		end
+		if !is_present
+			@info "The placement of the black cell at position $idx delimited a new word (\"$(th_w.word)\") which has been therefore automatically added to the crossword."
+			push!(get!(BLACK_CELLS_BINDINGS,(row,col), []),th_w.word)
+			push!(cw.words, th_w)
+		end
+	end
 	update_crossword!(cw)
 	return true
 end
-
+function place_black_cell!(cw::CrosswordPuzzle, coords::Vector{<:Union{Tuple{Int, Int}, CartesianIndex{2}}})
+    for pos in coords
+        place_black_cell!(cw, pos[1], pos[2])
+    end
+end
 
 """
 	remove_black_cell!(cw::CrosswordPuzzle, row::Int, col::Int)
@@ -911,6 +987,14 @@ function remove_black_cell!(cw::CrosswordPuzzle, row::Int, col::Int)
 	else
 		if cw.black_cells[idx].manual == true
 			delete!(cw.black_cells, idx)
+			# we also need to remove the words that were automatically created by this black cell
+			if haskey(BLACK_CELLS_BINDINGS,idx)
+				for w in BLACK_CELLS_BINDINGS[idx]
+					@info "The placementr of the black cell at position $idx delimited a new word (\"$w\") which therefore we now automatically remove from the crossword."
+					deleteat!(cw.words,findfirst(ww->ww.word==w,cw.words))
+				end
+				delete!(BLACK_CELLS_BINDINGS, idx)
+			end
 			update_crossword!(cw)
 			return true
 		else
@@ -919,7 +1003,11 @@ function remove_black_cell!(cw::CrosswordPuzzle, row::Int, col::Int)
 		end
 	end
 end
-
+function remove_black_cell!(cw::CrosswordPuzzle, coords::Vector{<:Union{Tuple{Int, Int}, CartesianIndex{2}}})
+    for pos in coords
+        remove_black_cell!(cw, pos[1], pos[2])
+    end
+end
 
 # cw= example_crossword(type="full")
 
@@ -1187,7 +1275,7 @@ julia> striped_pattern(12, 20, symmetry=true, seed=1)
 12 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅ │
    └────────────────────────────────────────────────────────────┘
 
-julia>  striped_pattern(12, 20, symmetry=true, double_symmetry=true, seed=1)
+julia> striped_pattern(12, 20, symmetry=true, double_symmetry=true, seed=1)
      1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
    ┌────────────────────────────────────────────────────────────┐
  1 │ ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ⋅  ⋅  ■  ⋅  ⋅  ⋅  ⋅  ■  ⋅ │

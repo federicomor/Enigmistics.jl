@@ -36,7 +36,7 @@ export CrosswordWord, CrosswordBlackCell, CrosswordPuzzle, show_crossword, examp
 export enlarge!, shrink!, can_place_word, place_word!, remove_word!, place_black_cell!, remove_black_cell!
 export random_pattern, striped_pattern, clear!
 export save_crossword, load_crossword
-export setup_dictionary
+export set_dictionary, fitting_words
 export Slot, find_constrained_slots, compute_options_simple, compute_options_split, compute_options_flexible
 @info "============ finished Crosswords exports"
 

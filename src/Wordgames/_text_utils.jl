@@ -78,6 +78,7 @@ strip_text(c::Char) = strip_text(string(c))
 
 """
     count_letters(s::AbstractString)
+    count_letters(s::Vector{AbstractString})
 
 Count the number of alphabetic characters in a string.
 
@@ -92,12 +93,16 @@ julia> length(s) # 36 = 31 letters + 4 spaces + 1 hyphen
 36
 ```
 """
-function count_letters(s::AbstractString)
-    return sum(isletter.(char for char in s))
-end
-function count_letters(s::Vector{String})
-    return sum(count_letters.(s))
-end
+count_letters(s::AbstractString) = count(isletter, s)
+count_letters(s::AbstractVector{<:AbstractString}) = sum(count_letters, s)
+
+# function count_letters(s::AbstractString)
+#     # return sum(isletter.(char for char in s))
+#     count(isletter, s)
+# end
+# function count_letters(s::Vector{AbstractString})
+#     return sum(count_letters.(s))
+# end
 
 
 """

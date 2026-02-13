@@ -49,6 +49,8 @@ find_constrained_slots
 compute_options_simple
 compute_options_split
 compute_options_flexible
+set_dictionary
+fitting_words
 ```
 ```@docs
 fill!(cw::CrosswordPuzzle; seed=rand(Int), verbose=false)
